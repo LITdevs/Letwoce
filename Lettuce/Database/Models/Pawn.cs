@@ -1,6 +1,20 @@
-﻿namespace Lettuce.Database.Models;
+﻿using System.Drawing;
+using Microsoft.EntityFrameworkCore;
 
+namespace Lettuce.Database.Models;
+
+[PrimaryKey(nameof(Id))]
 public class Pawn
 {
-    
+    public Guid Id { get; init; }
+    public required string DiscordId { get; set; }
+    public required string Username { get; set; }
+    public int X { get; set; } = 0;
+    public int Y { get; set; } = 0;
+    public bool Alive => Health > 0;
+    public int Health { get; set; } = 3;
+    public int Actions { get; set; } = 0;
+    public Color Color { get; set; }
+    public DateTimeOffset KilledAt { get; set; }
+    public Guid KilledBy { get; set; }
 }

@@ -1,6 +1,9 @@
-﻿namespace Lettuce.Util.Converters;
+﻿using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
-public class DateTimeOffsetValueConverter
-{
-    
-}
+namespace Lettuce.Util.Converters;
+
+public class DateTimeOffsetConverter() : ValueConverter<DateTimeOffset, DateTimeOffset>
+(
+    d => d.ToUniversalTime(),
+    d => d.ToUniversalTime()
+);

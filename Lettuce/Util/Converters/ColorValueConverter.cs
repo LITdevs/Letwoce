@@ -1,6 +1,10 @@
-﻿namespace Lettuce.Util.Converters;
+﻿using System.Drawing;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
-public class ColorValueConverter
-{
-    
-}
+namespace Lettuce.Util.Converters;
+
+public class ColorValueConverter() : ValueConverter<Color, int>
+(
+    c => c.ToArgb(),
+    c => Color.FromArgb(c)
+);
