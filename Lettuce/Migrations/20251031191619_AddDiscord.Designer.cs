@@ -3,6 +3,7 @@ using System;
 using Lettuce.Database;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Lettuce.Migrations
 {
     [DbContext(typeof(PgContext))]
-    partial class PgContextModelSnapshot : ModelSnapshot
+    [Migration("20251031191619_AddDiscord")]
+    partial class AddDiscord
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -21,56 +24,6 @@ namespace Lettuce.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
-
-            modelBuilder.Entity("Lettuce.Database.Models.Event", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("ActionById")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("ActionToId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("ActionType")
-                        .HasColumnType("integer");
-
-                    b.Property<bool>("Died")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("EventText")
-                        .IsRequired()
-                        .HasMaxLength(1024)
-                        .HasColumnType("character varying(1024)");
-
-                    b.Property<int>("LettuceCount")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("NewX")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("NewY")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("OldX")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("OldY")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTimeOffset>("Timestamp")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ActionById");
-
-                    b.HasIndex("ActionToId");
-
-                    b.ToTable("Events");
-                });
 
             modelBuilder.Entity("Lettuce.Database.Models.Pawn", b =>
                 {
@@ -81,31 +34,25 @@ namespace Lettuce.Migrations
                     b.Property<int>("Actions")
                         .HasColumnType("integer");
 
-                    b.Property<string>("AvatarUri")
-                        .HasMaxLength(1024)
-                        .HasColumnType("character varying(1024)");
-
                     b.Property<int>("Color")
                         .HasColumnType("integer");
 
                     b.Property<string>("DiscordId")
                         .IsRequired()
-                        .HasMaxLength(32)
-                        .HasColumnType("character varying(32)");
-
-                    b.Property<string>("DisplayName")
-                        .IsRequired()
-                        .HasMaxLength(1024)
-                        .HasColumnType("character varying(1024)");
+                        .HasColumnType("text");
 
                     b.Property<int>("Health")
                         .HasColumnType("integer");
 
-                    b.Property<DateTimeOffset?>("KilledAt")
+                    b.Property<DateTimeOffset>("KilledAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid?>("KilledBy")
+                    b.Property<Guid>("KilledBy")
                         .HasColumnType("uuid");
+
+                    b.Property<string>("Username")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.Property<int>("X")
                         .HasColumnType("integer");
@@ -324,25 +271,6 @@ namespace Lettuce.Migrations
                     b.HasIndex("ApplicationId", "Status", "Subject", "Type");
 
                     b.ToTable("OpenIddictTokens", (string)null);
-                });
-
-            modelBuilder.Entity("Lettuce.Database.Models.Event", b =>
-                {
-                    b.HasOne("Lettuce.Database.Models.Pawn", "ActionBy")
-                        .WithMany()
-                        .HasForeignKey("ActionById")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Lettuce.Database.Models.Pawn", "ActionTo")
-                        .WithMany()
-                        .HasForeignKey("ActionToId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("ActionBy");
-
-                    b.Navigation("ActionTo");
                 });
 
             modelBuilder.Entity("OpenIddict.EntityFrameworkCore.Models.OpenIddictEntityFrameworkCoreAuthorization", b =>

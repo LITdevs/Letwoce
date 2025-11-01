@@ -1,10 +1,16 @@
 using Lettuce.Database;
+using Lettuce.Hubs;
+using Lettuce.Util;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
 
 namespace Lettuce;
 
 public class Program
 {
+    public static int GridWidth = 1;
+    public static int GridHeight = 1;
+    
     public static async Task Main(string[] args)
     {
         var builder = WebApplication.CreateBuilder(args);
@@ -13,8 +19,82 @@ public class Program
         builder.Services.AddRazorPages();
 
         builder.Services.AddDbContext<PgContext>(opt =>
-            opt.UseNpgsql(builder.Configuration.GetConnectionString("Postgres")));
+        {
+            opt.UseNpgsql(builder.Configuration.GetConnectionString("Postgres"));
+            opt.UseOpenIddict();
+        });
+        builder.Services.AddSignalR();
+        GridWidth = builder.Configuration.GetValue<int>("Lettuce:GridWidth", 35); 
+        GridHeight = builder.Configuration.GetValue<int>("Lettuce:GridHeight", 25); 
+        builder.Services.AddDistributedPostgresCache(options =>
+        {
+            options.ConnectionString = builder.Configuration.GetConnectionString("Postgres");
+            options.SchemaName = builder.Configuration.GetValue<string>("PostgresCache:SchemaName", "public");
+            options.TableName = builder.Configuration.GetValue<string>("PostgresCache:TableName", "DistributedCache");
+            options.CreateIfNotExists = builder.Configuration.GetValue<bool>("PostgresCache:CreateIfNotExists", true);
+            options.UseWAL = builder.Configuration.GetValue<bool>("PostgresCache:UseWAL", false);
+            
+            var expirationInterval = builder.Configuration.GetValue<string>("PostgresCache:ExpiredItemsDeletionInterval");
+            if (!string.IsNullOrEmpty(expirationInterval) && TimeSpan.TryParse(expirationInterval, out var interval)) {
+                options.ExpiredItemsDeletionInterval = interval;
+            }
+
+            var slidingExpiration = builder.Configuration.GetValue<string>("PostgresCache:DefaultSlidingExpiration");
+            if (!string.IsNullOrEmpty(slidingExpiration) && TimeSpan.TryParse(slidingExpiration, out var sliding)) {
+                options.DefaultSlidingExpiration = sliding;
+            }
+        });
+
+        builder.Services.AddSession(options =>
+        {
+            options.IdleTimeout = TimeSpan.FromHours(8);
+            options.Cookie.HttpOnly = true;
+            options.Cookie.IsEssential = true;
+        });
         
+        builder.Services.AddAuthentication(options =>
+            {
+                options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+            })
+            .AddCookie(options =>
+            {
+                options.LoginPath = "/login";
+                options.LogoutPath = "/logout";
+                options.ExpireTimeSpan = TimeSpan.FromHours(8);
+                options.SlidingExpiration = true;
+            });
+
+        builder.Services.AddOpenIddict()
+            .AddCore(opt =>
+            {
+                opt.UseEntityFrameworkCore()
+                    .UseDbContext<PgContext>();
+            })
+            .AddClient(opt =>
+            {
+                opt.AllowAuthorizationCodeFlow();
+
+                // ???
+                opt.AddDevelopmentEncryptionCertificate();
+                opt.AddDevelopmentSigningCertificate();
+
+                opt.UseAspNetCore()
+                    .EnableRedirectionEndpointPassthrough()
+                    .DisableTransportSecurityRequirement(); // Behind reverse proxy
+
+                // ???
+                opt.UseSystemNetHttp();
+
+                opt.UseWebProviders()
+                    .AddDiscord(options =>
+                    {
+                        var discordSettings = builder.Configuration.GetSection("Discord").Get<DiscordSettings>();
+                        options.SetClientId(discordSettings!.ClientId);
+                        options.SetClientSecret(discordSettings!.ClientSecret);
+                        options.SetRedirectUri("discord-callback");
+                    });
+            });
+
         var app = builder.Build();
 
         using (var scope = app.Services.CreateScope())
@@ -22,21 +102,27 @@ public class Program
             var db = scope.ServiceProvider.GetRequiredService<PgContext>();
             await db.Database.MigrateAsync();
         }
-        
+
         // Configure the HTTP request pipeline.
         if (!app.Environment.IsDevelopment())
         {
             app.UseExceptionHandler("/Error");
         }
 
+        app.UseSession();
+        app.UseForwardedHeaders();
+
         app.UseRouting();
 
+        app.UseAuthentication();
         app.UseAuthorization();
-        
-        
+
+
         app.MapStaticAssets();
         app.MapRazorPages()
             .WithStaticAssets();
+        app.MapControllers();
+        app.MapHub<LettuceHub>("/lettuceHub");
 
         await app.RunAsync();
     }

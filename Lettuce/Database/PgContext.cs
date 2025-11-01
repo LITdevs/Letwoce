@@ -8,6 +8,7 @@ namespace Lettuce.Database;
 public class PgContext(DbContextOptions<PgContext> options) : DbContext(options)
 {
     public DbSet<Pawn> Pawns { get; set; }
+    public DbSet<Event> Events { get; set; }
     
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
     {

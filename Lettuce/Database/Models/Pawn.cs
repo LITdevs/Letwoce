@@ -1,4 +1,5 @@
-﻿using System.Drawing;
+﻿using System.ComponentModel.DataAnnotations;
+using System.Drawing;
 using Microsoft.EntityFrameworkCore;
 
 namespace Lettuce.Database.Models;
@@ -7,14 +8,19 @@ namespace Lettuce.Database.Models;
 public class Pawn
 {
     public Guid Id { get; init; }
+    [MaxLength(32)]
     public required string DiscordId { get; set; }
-    public required string Username { get; set; }
+    [MaxLength(1024)]
+    public required string DisplayName { get; set; }
     public int X { get; set; } = 0;
     public int Y { get; set; } = 0;
     public bool Alive => Health > 0;
     public int Health { get; set; } = 3;
     public int Actions { get; set; } = 0;
     public Color Color { get; set; }
-    public DateTimeOffset KilledAt { get; set; }
-    public Guid KilledBy { get; set; }
+    public DateTimeOffset? KilledAt { get; set; }
+    public Guid? KilledBy { get; set; }
+    
+    [MaxLength(1024)]
+    public string? AvatarUri { get; set; }
 }

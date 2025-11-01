@@ -1,0 +1,61 @@
+﻿.connection-indicator {
+    position: absolute;
+    left: 0;
+    bottom: 5rem;
+    padding: 1rem;
+    background-color: #000000ee;
+    font-size: 1.5rem;
+}
+
+.connection-indicator #connection-indicator-connected {
+    color: green;
+}
+
+.connection-indicator #connection-indicator-disconnected {
+    color: red;
+}
+
+.connection-indicator #connection-indicator-connecting {
+    color: orange;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    .connection-indicator #connection-indicator-connecting {
+        animation-name: connectingAnimation;
+        animation-duration: 1s;
+        animation-iteration-count: infinite;
+    }
+}
+
+@keyframes connectingAnimation {
+    0% {
+        opacity: 0
+    }
+    40% {
+        opacity: 100% 
+    }
+    60% {
+        opacity: 100%
+    }
+    100% {
+        opacity: 0
+    }
+}
+
+.container {
+    height: 100%
+}
+
+
+html {
+    position: relative;
+    min-height: 100%;
+}
+
+body {
+    position: relative;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}

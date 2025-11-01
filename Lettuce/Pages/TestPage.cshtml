@@ -1,0 +1,153 @@
+﻿@page
+@using System.Security.Claims
+@using OpenIddict.Abstractions
+@model Lettuce.Pages.TestPage
+
+<link rel="stylesheet" href="~/css/game.css" asp-append-version="true"/>
+<script src="~/js/signalr/dist/browser/signalr.js"></script>
+
+<div>
+    <p>This page is @(User.Identity?.IsAuthenticated == true ? "Authorized" : "Unauthorized")!</p>
+    <p>Currently there are <span id="count">?</span> players on the page</p>
+    <p>Hello @User.GetClaim(ClaimTypes.NameIdentifier)</p>
+    <img src="@User.GetClaim("avatar")"  alt=""/>
+</div>
+
+<div style="display:none" id="connection-indicator" class="connection-indicator">
+    <i style="display:none" id="connection-indicator-connected" class="fa-regular fa-wifi"></i>
+    <i style="display:none" id="connection-indicator-disconnected" class="fa-regular fa-wifi-slash"></i>
+    <i style="display:none" id="connection-indicator-connecting" class="fa-regular fa-wifi-slash"></i>
+</div>
+
+<div id="pawns">
+    
+</div>
+
+<button onclick="moveRelative(0, -1)">Move up!</button>
+<button onclick="moveRelative(0, 1)">Move down!</button>
+<button onclick="moveRelative(-1, 0)">Move left!</button>
+<button onclick="moveRelative(1, 0)">Move right!</button>
+
+<button onclick="moveRelative(1, -1)">Move rightup!</button>
+<button onclick="moveRelative(-1, -1)">Move leftup!</button>
+<button onclick="moveRelative(1, 1)">Move rightdown!</button>
+<button onclick="moveRelative(-1, 1)">Move leftdown!</button>
+
+<script>
+    const GRID_WIDTH = @Program.GridWidth;
+    const GRID_HEIGHT = @Program.GridHeight;
+    window.lettuce = {};
+    window.lettuce.isConnected = false;
+    let statusTimeout;
+    let connection = new signalR.HubConnectionBuilder()
+        .withUrl("/lettuceHub")
+        .withAutomaticReconnect()
+        .build();
+
+    showConnectionStatus("connecting")
+    connection.start().then(async function () {
+        onConnect(false)
+        let pawns = await connection.invoke("GetPawns");
+        window.lettuce.pawns = pawns;
+        updatePawns();
+        console.log(pawns);
+        
+        setInterval(async () => {
+            if (!window.lettuce.isConnected) return;
+            let count = await connection.invoke("GetLiveCount")
+            updateLiveCount(count)
+        }, 1000)
+        
+    }).catch(function (err) {
+        return console.error(err.toString());
+    });
+    
+    function showConnectionStatus(status) {
+        if (statusTimeout) clearTimeout(statusTimeout)
+        switch (status) {
+            case "disconnected":
+                document.getElementById("connection-indicator").style.display = "unset";
+                document.getElementById("connection-indicator-connected").style.display = "none";
+                document.getElementById("connection-indicator-disconnected").style.display = "unset";
+                document.getElementById("connection-indicator-connecting").style.display = "none";
+                break;
+            case "connected":
+                document.getElementById("connection-indicator").style.display = "unset";
+                document.getElementById("connection-indicator-connected").style.display = "unset";
+                document.getElementById("connection-indicator-disconnected").style.display = "none";
+                document.getElementById("connection-indicator-connecting").style.display = "none";
+                break;
+            case "connecting":
+                document.getElementById("connection-indicator").style.display = "unset";
+                document.getElementById("connection-indicator-connected").style.display = "none";
+                document.getElementById("connection-indicator-disconnected").style.display = "none";
+                document.getElementById("connection-indicator-connecting").style.display = "unset";
+                break;
+            default:
+                document.getElementById("connection-indicator").style.display = "none";
+                document.getElementById("connection-indicator-connected").style.display = "none";
+                document.getElementById("connection-indicator-disconnected").style.display = "none";
+                document.getElementById("connection-indicator-connecting").style.display = "none";
+        }
+    }
+    
+    connection.onreconnected(() => {
+        onConnect(true);
+    });
+
+    connection.onclose(() => {
+        showConnectionStatus("disconnected");
+    })
+
+    connection.onreconnecting(error => {
+        onDisconnect(error);
+        showConnectionStatus("connecting");
+    });
+
+    function onDisconnect(error) {
+        console.warn("Connection lost due to error:", error);
+        window.lettuce.isConnected = false;
+    }
+
+    function onConnect(isReconnect) {
+        console.log(`${isReconnect ? "Rec" : "C"}onnected!`);
+        window.lettuce.isConnected = true;
+        showConnectionStatus("connected");
+        statusTimeout = setTimeout(() => {
+            showConnectionStatus();
+        }, 2000);
+    }
+
+
+    connection.on("UpdateLiveCount", (count) => {
+        console.log("Got count from server");
+        updateLiveCount(count);
+    })
+    
+    connection.on("MoveTo", (pawnId, x, y, actions) => {
+        console.log(pawnId, x, y);
+        let pawn = window.lettuce.pawns.find(p => p.id === pawnId);
+        pawn.x = x;
+        pawn.y = y;
+        pawn.actions = actions;
+        updatePawns();
+    })
+    
+    function updateLiveCount(count) {
+        document.getElementById("count").innerHTML = count;
+    }
+    
+    function updatePawns() {
+        let html = "<ul>"
+        window.lettuce.pawns.forEach(pawn => {
+            html += `<li>${pawn.displayName} - X: ${pawn.x} Y: ${pawn.y} - ${pawn.health}HP ${pawn.actions} Lettuce</li>`
+        })
+        html += "</ul>"
+        document.getElementById("pawns").innerHTML = html; 
+    }
+    
+    async function moveRelative(x, y) {
+        let pawn = window.lettuce.pawns.find(p => p.id === "@(Html.Raw(User.GetClaim("pawnId")))");
+        await connection.invoke("MoveTo", pawn.x+x, pawn.y+y);
+    }
+</script>

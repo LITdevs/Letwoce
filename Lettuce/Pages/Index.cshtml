@@ -1,4 +1,6 @@
 ﻿@page
+@using System.Security.Claims
+@using OpenIddict.Abstractions
 @model IndexModel
 @{
     ViewData["Title"] = "Home page";
@@ -6,4 +8,6 @@
 
 <div class="text-center">
     <h1 class="display-4">Meow meow meow</h1>
+    <p>Is authenticated: @(User.Identity?.IsAuthenticated ?? false)</p>
+    <p>Name perhaps: @User.GetClaim(ClaimTypes.Name)</p>
 </div>
