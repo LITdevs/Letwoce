@@ -78,8 +78,9 @@ public class Program
                 opt.AllowAuthorizationCodeFlow();
 
                 // ???
-                opt.AddDevelopmentEncryptionCertificate();
-                opt.AddDevelopmentSigningCertificate();
+                var cert = CertificateLoader.GetOrCreateCertificate();
+                opt.AddEncryptionCertificate(cert);
+                opt.AddSigningCertificate(cert);
 
                 opt.UseAspNetCore()
                     .EnableRedirectionEndpointPassthrough()
