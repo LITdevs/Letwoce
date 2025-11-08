@@ -31,5 +31,6 @@ public enum ActionType
     Gift,
     Attack,
     LettuceDrop,
-    Scol
+    Scol,
+    Speak
 }

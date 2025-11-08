@@ -3,6 +3,7 @@ using System;
 using Lettuce.Database;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Lettuce.Migrations
 {
     [DbContext(typeof(PgContext))]
-    partial class PgContextModelSnapshot : ModelSnapshot
+    [Migration("20251108123552_AddQuartz")]
+    partial class AddQuartz
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -559,20 +562,6 @@ namespace Lettuce.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Pawns");
-
-                    b.HasData(
-                        new
-                        {
-                            Id = new Guid("ffffffff-ffff-ffff-ffff-ffffffffffff"),
-                            Actions = 2147483647,
-                            AvatarUri = "https://015-cdn.b-cdn.net/db49f42ed7b4a0f5a209dc00f8d780d5.png",
-                            Color = 16777215,
-                            DiscordId = "1334788940082970654",
-                            DisplayName = "Supreme Court of Lettuce",
-                            Health = 2147483647,
-                            X = -5,
-                            Y = 5
-                        });
                 });
 
             modelBuilder.Entity("OpenIddict.EntityFrameworkCore.Models.OpenIddictEntityFrameworkCoreApplication", b =>

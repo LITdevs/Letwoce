@@ -33,6 +33,9 @@
 <button onclick="moveRelative(1, 1)">Move rightdown!</button>
 <button onclick="moveRelative(-1, 1)">Move leftdown!</button>
 
+<input type="text" id="talkbox"/>
+<input type="submit" onclick="talk()" value="Speak" />
+
 <script>
     const GRID_WIDTH = @Program.GridWidth;
     const GRID_HEIGHT = @Program.GridHeight;
@@ -132,6 +135,34 @@
         pawn.actions = actions;
         updatePawns();
     })
+
+    connection.on("Attack", (attackerId, attackedId) => {
+        console.log(attackerId, attackedId);
+        let attacker = window.lettuce.pawns.find(p => p.id === attackerId);
+        attacker.actions -= 1;
+        let attacked = window.lettuce.pawns.find(p => p.id === attackedId);
+        attacked.health -= 1;
+        if (attacked.health < 1) attacked.alive = false;
+        updatePawns();
+    })
+
+    connection.on("Gift", (attackerId, attackedId, amount) => {
+        console.log(attackerId, attackedId, amount);
+        let attacker = window.lettuce.pawns.find(p => p.id === attackerId);
+        attacker.actions -= amount;
+        let attacked = window.lettuce.pawns.find(p => p.id === attackedId);
+        attacked.actions += amount;
+        updatePawns();
+    })
+    
+    connection.on("LettuceDrop", (amount) => {
+        console.log("Drop", amount);
+        window.lettuce.pawns.forEach(pawn => {
+            if (pawn.id === "ffffffff-ffff-ffff-ffff-ffffffffffff") return;
+            pawn.actions += amount;
+        })
+        updatePawns();
+    })
     
     function updateLiveCount(count) {
         document.getElementById("count").innerHTML = count;
@@ -140,14 +171,29 @@
     function updatePawns() {
         let html = "<ul>"
         window.lettuce.pawns.forEach(pawn => {
-            html += `<li>${pawn.displayName} - X: ${pawn.x} Y: ${pawn.y} - ${pawn.health}HP ${pawn.actions} Lettuce</li>`
+            html += `<li>${pawn.displayName} - X: ${pawn.x} Y: ${pawn.y} - ${pawn.health}HP ${pawn.actions} Lettuce ${pawn.alive ? "Alive" : "Dead"} <a href="#" onclick="attack('${pawn.id}')">Attack</a> <a href="#" onclick="gift('${pawn.id}')">Gift</a></li>`
         })
         html += "</ul>"
         document.getElementById("pawns").innerHTML = html; 
+    }
+
+    async function attack(id) {
+        await connection.invoke("Attack", id);
+    }
+
+    async function gift(id) {
+        await connection.invoke("Gift", id);
     }
     
     async function moveRelative(x, y) {
         let pawn = window.lettuce.pawns.find(p => p.id === "@(Html.Raw(User.GetClaim("pawnId")))");
         await connection.invoke("MoveTo", pawn.x+x, pawn.y+y);
+    }
+    
+    async function talk() {
+        let textbox = document.getElementById("talkbox");
+        let msg = textbox.value;
+        textbox.value = "";
+        await connection.invoke("Speak", msg);
     }
 </script>

@@ -1,8 +1,11 @@
 using Lettuce.Database;
 using Lettuce.Hubs;
+using Lettuce.Jobs;
 using Lettuce.Util;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
+using Quartz;
+using Quartz.Impl.AdoJobStore;
 
 namespace Lettuce;
 
@@ -94,6 +97,40 @@ public class Program
                         options.SetRedirectUri("discord-callback");
                     });
             });
+
+        builder.Services.AddSingleton<HttpClient>();
+        builder.Services.Configure<NotifierSettings>(builder.Configuration.GetSection("Notifier"));
+        builder.Services.AddScoped<EventNotifier>();
+
+        builder.Services.AddQuartz(q =>
+        {
+            q.UsePersistentStore(c =>
+            {
+                c.UsePostgres(p =>
+                {
+                    p.UseDriverDelegate<PostgreSQLDelegate>();
+                    p.ConnectionStringName = "Postgres";
+                    p.TablePrefix = "quartz.qrtz_";
+                });
+                c.UseNewtonsoftJsonSerializer();
+            });
+
+            var jobKey = new JobKey("LettuceDrop");
+            q.AddJob<LettuceDropJob>(jobKey, j => 
+                j.WithDescription("Daily lettuce drop"));
+
+            q.AddTrigger(t => t
+                .WithIdentity("Daily")
+                .ForJob(jobKey)
+                .WithCronSchedule("0 */1 * * * ?")
+                .WithDescription("Daily cron trigger"));
+        });
+
+        builder.Services.AddQuartzHostedService(q =>
+        {
+            q.AwaitApplicationStarted = true;
+            q.WaitForJobsToComplete = true;
+        });
 
         var app = builder.Build();
 
