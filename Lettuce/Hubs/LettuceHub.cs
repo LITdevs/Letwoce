@@ -74,7 +74,7 @@ public class LettuceHub : Hub
             return false;
         }
 
-        if (x < 0 || x > Program.GridWidth || y < 0 || y > Program.GridHeight)
+        if (x < 0 || x >= Program.GridWidth || y < 0 || y >= Program.GridHeight)
         {
             logger.LogInformation("Rejecting move due to out of bounds");
             return false;

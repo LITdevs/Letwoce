@@ -122,7 +122,7 @@ public class Program
             q.AddTrigger(t => t
                 .WithIdentity("Daily")
                 .ForJob(jobKey)
-                .WithCronSchedule("0 */1 * * * ?")
+                .WithCronSchedule("0 0 14 * * ?")
                 .WithDescription("Daily cron trigger"));
         });
 

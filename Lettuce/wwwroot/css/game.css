@@ -1,9 +1,9 @@
 ﻿.connection-indicator {
     position: absolute;
     left: 0;
-    bottom: 5rem;
+    bottom: 12rem;
     padding: 1rem;
-    background-color: #000000ee;
+    background-color: #00000044;
     font-size: 1.5rem;
 }
 
@@ -58,4 +58,169 @@ body {
     display: flex;
     flex-direction: column;
     min-height: 100vh;
+}
+
+@font-face {
+    font-family: "IBM Plex Sans";
+    src: local("IBM Plex Sans"), url("/webfonts/plex.ttf") format("truetype");
+}
+body {
+    margin: 0;
+    padding: 0;
+    background: rgb(30,30,30);
+    color: white;
+    font-family: "IBM Plex Sans", system-ui, sans-serif;
+    overflow: hidden;
+}
+header {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: rgb(59,68,51);
+    gap: 0.5em;
+    padding: .2em;
+}
+header img {
+    height: 2em;
+}
+h1, h2 {
+    font-size: 1.2em;
+    margin: 0;
+}
+hr {
+    color: inherit;
+    border-top-width: 1px;
+    height: 0;
+}
+.byline {
+    margin-top: 0;
+}
+
+.loginwall {
+    margin: 0.5em auto;
+    max-width: 35em;
+    background: rgb(46, 46, 46);
+    padding: 1em;
+    border-radius: 5px;
+    text-align: center;
+}
+
+#pixi {
+    width: 100%;
+    height: calc(100vh - 10em);
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+#stats {
+    display: flex;
+    justify-content: space-between;
+    height: 6em;
+    padding: .8em;
+}
+#stats > div, #stats .aviebox {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: .5em;
+}
+#stats .metas {
+    flex-direction: column;
+    align-items: end;
+}
+#stats .tabs {
+    display: flex;
+    gap: .5em;
+}
+#stats .tabs button {
+    cursor: pointer;
+    font-family: "IBM Plex Sans", system-ui, sans-serif;
+    font-size: 2em;
+    border: none;
+    border-radius: 3px;
+    background: rgb(60, 60, 60);
+    color: white;
+
+    display: flex;
+    gap: .2em;
+}
+#stats .tabs button:hover {
+    background: rgb(90, 90, 90);
+}
+#stats .tabs button img {
+    width: 1.3em;
+    height: 1.3em;
+}
+#stats .pcount {
+    font-size: 1.7em;
+}
+.aviebox .info {
+    display: flex;
+    flex-direction: column;
+}
+.aviebox .health {
+    display: flex;
+}
+.aviebox .units img {
+    width: 2em;
+}
+.aviebox .pfp {
+    height: 6em;
+    width: 6em;
+    border-radius: 10px;
+    /*cursor: grab;*/
+}
+.aviebox .name {
+    font-weight: bold;
+    font-size: 2em;
+}
+.aviebox .units {
+    display: flex;
+    gap: .5em;
+}
+.aviebox .units .lettuce {
+    display: flex;
+    gap: .5em;
+    align-items: center;
+}
+.aviebox .units .lettucecount {
+    font-size: 1.5em;
+}
+
+.pointerphobe {
+    pointer-events: none !important;
+    /*
+        https://github.com/pixijs/pixijs/blob/4cfcbc08446c1cc2480f00124474e892dd6a4e4b/src/dom/DOMPipe.ts#L136
+
+        For DOMContainers PixiJS sets the container to pointer-events: auto by default to override the preference
+        of its parent container that sets pointer-events: none. Ref. MDN that the browser is supposed to respect
+        (not ignore) that: https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/pointer-events
+
+        "If one of the element's children has pointer-events explicitly set to allow that child to be the target
+        of pointer events, then any events targeting that child will pass through the parent as the event travels
+        along the parent chain, and trigger event listeners on the parent as appropriate."
+
+        I tried adding pointer-events: none; to the #tooltip styling but the aforementioned behavior causes the
+        tooltip's DOMContainer to screw things up anyway. This is bad because if you are panning around with the
+        cursor then it can get onto the tooltip if you are moving quickly which then *starts capturing hovers
+        instead of the canvas!!* Luckily there is a cheap fix above (that requires using !important) that is used
+        by the game: [domcontainer].element.classList.add("pointerphobe");
+
+        I did also try tooltip.element.style.pointerEvents = "none"; in case it would override it but as PixiJS
+        sets pointerEvents to auto during the "postrender" function this has no effect and I need to do it by
+        styling (or do some weird post-post-render stuff but why would I do that, more effort for no gain...)
+
+        Thank you for coming to my NIA Talk. I'm not 100% confident what I said is true but who cares it works
+        amirite? Hahahah. Can I make this even longer? I need to hit the end of my line wrap. Word. Word. Word.
+        Fun fact: This client is codenamed "Leafy Green". Fun fact two: I need to hit the end of the wrap again.
+     */
+}
+#tooltip {
+    padding: .5em;
+    max-width: 15em;
+    background: rgb(30,30,30);
+
+    display: flex;
+    gap: .2em;
 }

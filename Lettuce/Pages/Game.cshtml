@@ -1,0 +1,339 @@
+﻿@page
+@using System.Security.Claims
+@using OpenIddict.Abstractions
+@model Lettuce.Pages.GameModel
+
+@{
+    ViewData["Title"] = "Lettuce Fighters";
+}
+
+<link rel="stylesheet" href="~/css/game.css" asp-append-version="true"/>
+<script src="~/js/signalr/dist/browser/signalr.js" asp-append-version="true"></script>
+
+<div id="pixi"></div>
+
+
+<div id="stats">
+    <div class="aviebox">
+        <img class="pfp" src="@Model.OwnPawn?.AvatarUri" alt="" referrerpolicy="no-referrer">
+        <div class="info">
+            <span class="name">@Model.OwnPawn?.DisplayName</span>
+            <div class="units">
+                <div class="health">
+                    <i style="" class="fa-solid fa-heart@(Model.OwnPawn?.Health < 1 ? "-crack" : "")"></i>
+                    <i class="fa-solid fa-heart@(Model.OwnPawn?.Health < 2 ? "-crack" : "")"></i>
+                    <i class="fa-solid fa-heart@(Model.OwnPawn?.Health < 3 ? "-crack" : "")"></i>
+                 </div>
+                <div class="lettuce">
+                    <img src="/assets/lettuce.png" alt=""> <span class="lettucecount">@Model.OwnPawn?.Actions</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="metas">
+        <div class="tabs">
+            <button><img src="/assets/pawn.png"> players</button>
+            <button><img src="/assets/pawn_dead.png"> events</button>
+            <button><i class="fa-solid fa-crosshairs" style="color: red"></i> ranges</button>
+        </div>
+        <span id="pcount" class="pcount">? fighter online</span>
+    </div>
+</div>
+
+<div style="display:none" id="connection-indicator" class="connection-indicator">
+    <i style="display:none" id="connection-indicator-connected" class="fa-regular fa-wifi"></i>
+    <i style="display:none" id="connection-indicator-disconnected" class="fa-regular fa-wifi-slash"></i>
+    <i style="display:none" id="connection-indicator-connecting" class="fa-regular fa-wifi-slash"></i>
+</div>
+
+<button onclick="moveRelative(0, -1)">Move up!</button>
+<button onclick="moveRelative(0, 1)">Move down!</button>
+<button onclick="moveRelative(-1, 0)">Move left!</button>
+<button onclick="moveRelative(1, 0)">Move right!</button>
+
+<button onclick="moveRelative(1, -1)">Move rightup!</button>
+<button onclick="moveRelative(-1, -1)">Move leftup!</button>
+<button onclick="moveRelative(1, 1)">Move rightdown!</button>
+<button onclick="moveRelative(-1, 1)">Move leftdown!</button>
+
+<input type="text" id="talkbox"/>
+<input type="submit" onclick="talk()" value="Speak" />
+
+<script>
+    const MY_UUID = "@Model.OwnPawn?.Id.ToString()";
+    const GRID_WIDTH = @Program.GridWidth;
+    const GRID_HEIGHT = @Program.GridHeight;
+    const PAWN_SIZE = 100;
+    const TILE_PADDING = 10;
+    const TILE_SIZE = PAWN_SIZE+TILE_PADDING;
+    const GRID_LINEWIDTH = 2;
+    const sleep = ms => new Promise(r => setTimeout(r, ms));
+</script>
+<script src="/js/pixi/pixi.min.js" asp-append-version="true"></script>
+<script src="/js/pixi/pixi_viewport.iife.js" asp-append-version="true"></script>
+
+<script>
+    window.lettuce = {};
+    window.lettuce.isConnected = false;
+    let statusTimeout;
+    let connection = new signalR.HubConnectionBuilder()
+        .withUrl("/lettuceHub")
+        .withAutomaticReconnect()
+        .build();
+
+    showConnectionStatus("connecting")
+    connection.start().then(async function () {
+        onConnect(false)
+        window.lettuce.pawns = await connection.invoke("GetPawns");
+        console.log(window.lettuce.pawns);
+        
+        setInterval(async () => {
+            if (!window.lettuce.isConnected) return;
+            let count = await connection.invoke("GetLiveCount")
+            updateLiveCount(count)
+        }, 1000)
+
+
+        window.lettuce.pawnTexture = await PIXI.Assets.load("/assets/pawn.png");
+        window.lettuce.pawnSprites = {};
+
+        const app = new PIXI.Application();
+        await app.init({background: "rgb(46,46,46)", resizeTo: document.getElementById("pixi")});
+
+        const viewport = new pixi_viewport.Viewport({
+            screenWidth: window.innerWidth, screenHeight: window.innerHeight,
+            worldWidth: TILE_SIZE*GRID_WIDTH, worldHeight: TILE_SIZE*GRID_HEIGHT, events: app.renderer.events
+        }); viewport.drag().pinch().wheel().decelerate().clampZoom({minScale:0.1})
+
+        const turtle = new PIXI.Graphics();
+        const tooltip = new PIXI.DOMContainer();
+        tooltip.element.classList.add("pointerphobe");
+        tooltip.element.innerHTML = `<div id="tooltip"><span id="tilecoords"></span>&bull;<span id="hoveredpawn">Nobody</span></div>`
+
+        turtle.zIndex = -1;
+
+        drawGrid(turtle);
+        viewport.on("zoomed", () => {
+            drawGrid(turtle, GRID_LINEWIDTH/viewport.scale.x)
+            tooltip.scale = 1/viewport.scale.x;
+        })
+
+        viewport.on('pointermove', (event) => {
+            const pos = viewport.toWorld(event.global);
+            const tile = {x:Math.floor(pos.x/TILE_SIZE), y:Math.floor(pos.y/TILE_SIZE)};
+
+            // const pawn = window.lettuce.pawns.find(pawn => pawn.x === tile.x && pawn.y === tile.y);
+
+            tooltip.element.querySelector("#tilecoords").innerText = `(${tile.x},${tile.y})`;
+            tooltip.position.set(pos.x+20,pos.y)
+            // console.log(event)
+        });
+        viewport.on('click', (event) => {
+            const pos = viewport.toWorld(event.global);
+            const tile = {x:Math.floor(pos.x/TILE_SIZE), y:Math.floor(pos.y/TILE_SIZE)};
+
+            // const pawn = window.lettuce.pawns.find(pawn => pawn.x === tile.x && pawn.y === tile.y);
+
+            tooltip.element.querySelector("#tilecoords").innerText = `(${tile.x},${tile.y})`;
+        });
+
+        viewport.addChild(tooltip);
+        viewport.addChild(turtle);
+        app.stage.addChild(viewport);
+        document.getElementById("pixi").appendChild(app.canvas);
+
+
+        window.lettuce.pawns.forEach(pawn => {
+            const sprite = viewport.addChild(new PIXI.Sprite(window.lettuce.pawnTexture));
+            sprite.anchor.set(0.5);
+            let color = pawn.color.name;
+            // if (color.length > 6) {
+            //     color = pawn.color.slice(2);
+            // }
+            sprite.tint = "0x" + color;
+            sprite.width = sprite.height = PAWN_SIZE;
+            sprite.eventMode = "static";
+            sprite.pawnID = pawn.id;
+            sprite.on('pointerout', (event) => {
+                tooltip.element.querySelector("#hoveredpawn").innerText = "Nobody";
+            })
+            sprite.on('pointermove', (event) => {
+                const pawn = window.lettuce.pawns.find(pawn => pawn.id === event.target.pawnID);
+                tooltip.element.querySelector("#hoveredpawn").innerText = pawn.displayName;
+            });
+            moveToTile(sprite, pawn.x, pawn.y, false)
+            window.lettuce.pawnSprites[pawn.id] = sprite;
+        })
+
+        app.ticker.add(() => {})
+    }).catch(function (err) {
+        return console.error(err.toString());
+    });
+    
+    function showConnectionStatus(status) {
+        if (statusTimeout) clearTimeout(statusTimeout)
+        switch (status) {
+            case "disconnected":
+                document.getElementById("connection-indicator").style.display = "unset";
+                document.getElementById("connection-indicator-connected").style.display = "none";
+                document.getElementById("connection-indicator-disconnected").style.display = "unset";
+                document.getElementById("connection-indicator-connecting").style.display = "none";
+                break;
+            case "connected":
+                document.getElementById("connection-indicator").style.display = "unset";
+                document.getElementById("connection-indicator-connected").style.display = "unset";
+                document.getElementById("connection-indicator-disconnected").style.display = "none";
+                document.getElementById("connection-indicator-connecting").style.display = "none";
+                break;
+            case "connecting":
+                document.getElementById("connection-indicator").style.display = "unset";
+                document.getElementById("connection-indicator-connected").style.display = "none";
+                document.getElementById("connection-indicator-disconnected").style.display = "none";
+                document.getElementById("connection-indicator-connecting").style.display = "unset";
+                break;
+            default:
+                document.getElementById("connection-indicator").style.display = "none";
+                document.getElementById("connection-indicator-connected").style.display = "none";
+                document.getElementById("connection-indicator-disconnected").style.display = "none";
+                document.getElementById("connection-indicator-connecting").style.display = "none";
+        }
+    }
+    
+    connection.onreconnected(() => {
+        onConnect(true);
+    });
+
+    connection.onclose(() => {
+        showConnectionStatus("disconnected");
+    })
+
+    connection.onreconnecting(error => {
+        onDisconnect(error);
+        showConnectionStatus("connecting");
+    });
+
+    function onDisconnect(error) {
+        console.warn("Connection lost due to error:", error);
+        window.lettuce.isConnected = false;
+    }
+
+    function onConnect(isReconnect) {
+        console.log(`${isReconnect ? "Rec" : "C"}onnected!`);
+        window.lettuce.isConnected = true;
+        showConnectionStatus("connected");
+        statusTimeout = setTimeout(() => {
+            showConnectionStatus();
+        }, 2000);
+    }
+
+
+    connection.on("UpdateLiveCount", (count) => {
+        console.log("Got count from server");
+        updateLiveCount(count);
+    })
+    
+    connection.on("MoveTo", (pawnId, x, y, actions) => {
+        console.log(pawnId, x, y);
+        let pawn = window.lettuce.pawns.find(p => p.id === pawnId);
+        pawn.x = x;
+        pawn.y = y;
+        pawn.actions = actions;
+        moveToTile(window.lettuce.pawnSprites[pawn.id], x, y);
+    })
+
+    connection.on("Attack", (attackerId, attackedId) => {
+        // TODO: Leafy Green this
+        console.log(attackerId, attackedId);
+        let attacker = window.lettuce.pawns.find(p => p.id === attackerId);
+        attacker.actions -= 1;
+        let attacked = window.lettuce.pawns.find(p => p.id === attackedId);
+        attacked.health -= 1;
+        if (attacked.health < 1) attacked.alive = false;
+    })
+
+    connection.on("Gift", (attackerId, attackedId, amount) => {
+        // TODO: Leafy Green this
+        console.log(attackerId, attackedId, amount);
+        let attacker = window.lettuce.pawns.find(p => p.id === attackerId);
+        attacker.actions -= amount;
+        let attacked = window.lettuce.pawns.find(p => p.id === attackedId);
+        attacked.actions += amount;
+    })
+    
+    connection.on("LettuceDrop", (amount) => {
+        console.log("Drop", amount);
+        window.lettuce.pawns.forEach(pawn => {
+            if (pawn.id === "ffffffff-ffff-ffff-ffff-ffffffffffff") return;
+            pawn.actions += amount;
+        })
+    })
+    
+    function updateLiveCount(count) {
+        document.getElementById("pcount").innerHTML = `${count} fighter${count > 1 ? "s" : ""} online`;
+    }
+    
+    async function attack(id) {
+        await connection.invoke("Attack", id);
+    }
+
+    async function gift(id) {
+        await connection.invoke("Gift", id);
+    }
+    
+    async function moveRelative(x, y) {
+        let pawn = window.lettuce.pawns.find(p => p.id === "@(Html.Raw(User.GetClaim("pawnId")))");
+        await connection.invoke("MoveTo", pawn.x+x, pawn.y+y);
+    }
+    
+    async function talk() {
+        let textbox = document.getElementById("talkbox");
+        let msg = textbox.value;
+        textbox.value = "";
+        await connection.invoke("Speak", msg);
+    }
+    
+    // Leafy Green
+
+    const moveToTile = async (sprite, tx, ty, animate = true) => {
+        const sx = tx * TILE_SIZE + TILE_SIZE / 2; const sy = ty * TILE_SIZE + TILE_SIZE / 2;
+        return animate ? move(sprite, tx * TILE_SIZE + TILE_SIZE / 2, ty * TILE_SIZE + TILE_SIZE / 2) : sprite.position.set(sx,sy);
+    }
+    async function move(sprite, x, y) {
+        if(sprite.animControl) {
+            sprite.animControl.abort();
+            sprite.animControl = null;
+            return sprite.position.set(x, y);
+        }
+
+        sprite.animControl = new AbortController();
+        const {signal} = sprite.animControl;
+        const xDiff = (x-sprite.position.x)/3;
+        const yDiff = (y-sprite.position.y)/3;
+        const bump = async () => {await sleep(225);if(signal.aborted)throw"stop";sprite.position.set(sprite.position.x+xDiff, sprite.position.y+yDiff);}
+
+        try {
+            await bump();
+            sprite.angle = 15;
+            await bump();
+            sprite.angle = -15;
+            await bump();
+            sprite.position.set(x, y);
+        } catch {} finally {
+            sprite.angle = 0;
+            if(sprite.animControl?.signal === signal) sprite.animControl = null;
+        }
+    }
+    function drawGrid(turtle, width = GRID_LINEWIDTH) {
+        turtle.clear();
+        for (let i = 0; i < GRID_HEIGHT; i++) {
+            turtle.moveTo(0,TILE_SIZE*i).lineTo(TILE_SIZE*GRID_WIDTH, TILE_SIZE*i).stroke({width: width});
+        }
+        for (let i = 0; i < GRID_WIDTH; i++) {
+            turtle.moveTo(TILE_SIZE*i,0).lineTo(TILE_SIZE*i, TILE_SIZE*GRID_HEIGHT).stroke({width: width});
+        }
+        turtle.rect(0,0,TILE_SIZE*GRID_WIDTH,TILE_SIZE*GRID_HEIGHT).stroke({width: width})
+    }
+    
+    
+    
+</script>
