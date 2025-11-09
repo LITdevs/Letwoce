@@ -3,11 +3,20 @@
 @using OpenIddict.Abstractions
 @model IndexModel
 @{
-    ViewData["Title"] = "Home page";
+    ViewData["Title"] = "Lettuce Fighters";
 }
+<link rel="stylesheet" href="~/css/home.css" asp-append-version="true"/>
 
-<div class="text-center">
-    <h1 class="display-4">Meow meow meow</h1>
-    <p>Is authenticated: @(User.Identity?.IsAuthenticated ?? false)</p>
-    <p>Name perhaps: @User.GetClaim(ClaimTypes.Name)</p>
+<div class="content text-center">
+    <div class="card-center max-w-screen-md">
+
+        <span class="font-bold align-top">Participant</span><br>
+        <a href="/login"><button class="btn">Log in</button></a>
+
+        <hr class="my-2">
+
+        <span class="font-bold align-top">Spectator</span><br>
+        <a href="/game"><button class="btn">Spectate</button></a>
+
+    </div>
 </div>

@@ -1,0 +1,46 @@
+﻿.content {
+    flex: 1 0 auto;
+}
+
+.text-center {
+    text-align: center;
+}
+
+.card-center {
+    margin: 0.5rem;
+    border-radius: 10px;
+    background-color: rgb(46 46 46);
+    padding: 1rem;
+    margin-left: auto;
+    margin-right: auto;
+}
+.font-bold {
+    font-weight: 700;
+}
+.align-top {
+    vertical-align: top;
+}
+
+.max-w-screen-md {
+    max-width: 768px;
+}
+
+.my-2 {
+    margin-top: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.btn {
+    margin-top: 0.125rem;
+    margin-bottom: 0.125rem;
+    cursor: pointer;
+    border-radius: 0.125rem;
+    background-color: rgb(229 231 235);
+    padding: 0.5rem 0.75rem;
+    color: rgb(0 0 0);
+    box-sizing: border-box;
+    border-width: 0;
+    border-style: solid;
+    border-color: #e5e7eb;
+    font-size: 1rem
+}

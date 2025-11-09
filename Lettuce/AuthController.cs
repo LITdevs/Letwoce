@@ -67,9 +67,10 @@ public class AuthController(ILogger<AuthController> logger, PgContext pg) : Cont
         identity.SetClaim(OpenIddictConstants.Claims.Private.RegistrationId, result.Principal.GetClaim(OpenIddictConstants.Claims.Private.RegistrationId));
 
         // Build the authentication properties based on the properties that were added when the challenge was triggered.
+        if (result.Properties?.RedirectUri == "/") result.Properties.RedirectUri = "/game";
         var properties = new AuthenticationProperties(result.Properties.Items)
         {
-            RedirectUri = result.Properties.RedirectUri ?? "/"
+            RedirectUri = result.Properties.RedirectUri ?? "/game"
         };
 
         // If needed, the tokens returned by the authorization server can be stored in the authentication cookie.
