@@ -8,15 +8,23 @@
 <link rel="stylesheet" href="~/css/home.css" asp-append-version="true"/>
 
 <div class="content text-center">
-    <div class="card-center max-w-screen-md">
+    <div class="card-center max-w-screen-md" style="margin-top:1.5rem">
 
-        <span class="font-bold align-top">Participant</span><br>
-        <a href="/login"><button class="btn">Log in</button></a>
-
+        <h3 class="font-bold" style="margin-bottom: 0.5rem;margin-top: 0.25rem">Welcome to Lettuce Fighters!</h3>
+        <p style="margin-top: 0.5rem"><i>Lettuce Fighters</i> is a mostly unoriginal game of murder, backstabbing and delicious lettuce.</p>
+        
         <hr class="my-2">
-
-        <span class="font-bold align-top">Spectator</span><br>
-        <a href="/game"><button class="btn">Spectate</button></a>
+        
+        <div style="display:flex;flex-direction: row;justify-content: space-evenly">
+            <div>
+                <span class="font-bold align-top">Participant</span><br>
+                <a href="/login"><button class="btn">Log in</button></a>
+            </div>
+            <div>
+                <span class="font-bold align-top">Spectator</span><br>
+                <a href="/game"><button class="btn">Spectate</button></a>
+            </div>
+        </div>
 
     </div>
 </div>

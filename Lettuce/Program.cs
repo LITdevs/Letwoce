@@ -56,6 +56,7 @@ public class Program
         builder.Services.AddSession(options =>
         {
             options.IdleTimeout = TimeSpan.FromHours(8);
+            options.Cookie.MaxAge = TimeSpan.FromDays(30);
             options.Cookie.HttpOnly = true;
             options.Cookie.IsEssential = true;
         });
@@ -69,6 +70,9 @@ public class Program
                 options.LoginPath = "/login";
                 options.LogoutPath = "/logout";
                 options.ExpireTimeSpan = TimeSpan.FromHours(48);
+                options.Cookie.MaxAge = TimeSpan.FromDays(30);
+                options.Cookie.HttpOnly = true;
+                options.Cookie.SameSite = SameSiteMode.Strict;
                 options.SlidingExpiration = true;
             });
 
