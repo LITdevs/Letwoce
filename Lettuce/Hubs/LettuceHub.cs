@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using OpenIddict.Abstractions;
+using Quartz;
 
 namespace Lettuce.Hubs;
 
@@ -174,13 +175,41 @@ public class LettuceHub : Hub
             ActionTo = attackedPawn,
         };
         pg.Add(e);
-        await pg.SaveChangesAsync();
         en.HandleEvent(e);
+        if (!attackedPawn.Alive)
+        {
+            var voters = await pg.Pawns.Where(p => p.Vote == attackedPawn.Id).ToArrayAsync();
+            var pings = string.Join(", ", voters.Select(v => $"<@{v.DiscordId}>"));
+            var e2 = new Event
+            {
+                ActionById = pawn.Id,
+                ActionToId = attackedPawn.Id,
+                EventText = $"{pings} the fighter you voted for has been killed by {pawn.DisplayName}. Please choose a new fighter to support.",
+                LettuceCount = 0,
+                Died = false,
+                ActionType = ActionType.Attack
+            };
+            foreach (var voter in voters)
+            {
+                voter.Vote = null;
+            }
+            var e3 = new Event
+            {
+                ActionById = pawn.Id,
+                ActionToId = attackedPawn.Id,
+                EventText = $"<@{attackedPawn.DiscordId}> You have been killed. You may now vote in the Supreme Court of Lettuce to support a living fighter.",
+                LettuceCount = 0,
+                Died = false,
+                ActionType = ActionType.Attack
+            };
+            en.HandleEvent(e3);
+            en.HandleEvent(e2);
+        }
+        await pg.SaveChangesAsync();
         await Clients.All.SendAsync("Attack", pawn.Id, attackedPawn.Id);
 
         return true;
     }
-    
 
     [Authorize]
     public async Task<bool> Gift(PgContext pg, ILogger<LettuceHub> logger, EventNotifier en, Guid giftedPawnId)
@@ -272,5 +301,34 @@ public class LettuceHub : Hub
         await Clients.All.SendAsync("Speak", pawn.Id, message);
         return true;
     }
-    
+
+    [Authorize]
+    public async Task<bool> Vote(PgContext pg, Guid vote)
+    {
+        var pawnId = Guid.Parse(Context.User!.GetClaim("pawnId")!);
+        var pawn = await pg.Pawns.FirstOrDefaultAsync(p => p.Id == pawnId);
+        if (pawn == null) return false;
+        var votee = await pg.Pawns.FirstOrDefaultAsync(p => p.Id == vote);
+        if (votee == null) return false;
+        if (pawn.Alive) return false; // Must be dead to vote
+        if (!votee.Alive) return false; // Can't vote for corpses
+        pawn.Vote = votee.Id;
+        await pg.SaveChangesAsync();
+        return true;
+    }
+
+    [Authorize]
+    public async Task<bool> LDrop(PgContext pg, ISchedulerFactory factory)
+    {
+        var pawnId = Guid.Parse(Context.User!.GetClaim("pawnId")!);
+        var pawn = await pg.Pawns.FirstOrDefaultAsync(p => p.Id == pawnId);
+        if (pawn == null) return false;
+        if (pawn.DiscordId != "1029431168094978150") return false;
+        
+        var jobKey = new JobKey("LettuceDrop");
+        var allSchedulers = await factory.GetAllSchedulers();
+        var scheduler = allSchedulers[0];
+        await scheduler.TriggerJob(jobKey);
+        return true;
+    }
 }

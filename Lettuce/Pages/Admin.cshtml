@@ -1,7 +1,7 @@
 ﻿@page
 @using System.Security.Claims
 @using OpenIddict.Abstractions
-@model Lettuce.Pages.TestPage
+@model Lettuce.Pages.AdminModel
 
 <link rel="stylesheet" href="~/css/game.css" asp-append-version="true"/>
 <script src="~/js/signalr/dist/browser/signalr.js"></script>
@@ -35,6 +35,25 @@
 
 <input type="text" id="talkbox"/>
 <input type="submit" onclick="talk()" value="Speak" />
+
+@{
+    if (Model.OwnPawn?.Alive == false)
+    {
+        <select id="scol">
+            @{
+                foreach (var pawn in Model.Pawns)
+                {
+                    if (!pawn.Alive) continue;
+                    if (pawn.Id == Guid.AllBitsSet) continue;
+                    <option value="@pawn.Id.ToString()" selected="@(Model.OwnPawn.Vote == pawn.Id ? "true" : "false")">@pawn.DisplayName</option>
+                }
+            }
+        </select>
+        <button onclick="vote()">Cast vote</button>
+    }
+}
+
+<button onclick="ldrop()">Run lettuce drop</button>
 
 <script>
     const GRID_WIDTH = @Program.GridWidth;
@@ -195,5 +214,14 @@
         let msg = textbox.value;
         textbox.value = "";
         await connection.invoke("Speak", msg);
+    }
+    
+    async function vote() {
+        let vote = document.getElementById("scol").value;
+        await connection.invoke("Vote", vote);
+    }
+    
+    async function ldrop() {
+        await connection.invoke("LDrop");
     }
 </script>

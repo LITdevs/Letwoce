@@ -15,10 +15,11 @@ public class LettuceDropJob(PgContext pg, ILogger<LettuceDropJob> logger, IHubCo
         var pawns = await pg.Pawns.Where(p => p.Id != Guid.AllBitsSet).ToArrayAsync();
         foreach (var pawn in pawns)
         {
+            if (!pawn.Alive) continue;
             pawn.Actions++;
         }
 
-        var e = new Event
+        var dropEvent = new Event
         {
             ActionById = Guid.AllBitsSet,
             ActionToId = Guid.AllBitsSet,
@@ -32,12 +33,71 @@ public class LettuceDropJob(PgContext pg, ILogger<LettuceDropJob> logger, IHubCo
             ActionType = ActionType.LettuceDrop
         };
 
-        pg.Add(e);
+        pg.Add(dropEvent);
         
         await hub.Clients.All.SendAsync("LettuceDrop", 1);
-        await pg.SaveChangesAsync();
+        en.HandleEvent(dropEvent);
+
+        var votes = await pg.Pawns.Where(p => p.Vote != null).Select(p => new { p.Id, p.Vote }).ToArrayAsync();
+        var voteId = Guid.NewGuid();
+        foreach (var vote in votes)
+        {
+            var v = new Vote
+            {
+                Id = voteId,
+                VoterId = vote.Id,
+                DropId = dropEvent.Id,
+                VoteeId = vote.Vote!.Value,
+            };
+            pg.Add(v);
+        }
+
+        var finalDrops = new Dictionary<Guid, (int votes, int lettuce)>();
+        var groupedVotes = votes.GroupBy(v => v.Vote!.Value);
+        foreach (var groupedVote in groupedVotes)
+        {
+            if (groupedVote.Key == Guid.AllBitsSet) continue; //how..
+            var voteCount = groupedVote.Count();
+            if (votes.Length < 3)
+            {
+                finalDrops[groupedVote.Key] = (voteCount, 1);
+                continue;
+            }
+
+            var lettuceCount = (int)Math.Floor(voteCount / 3d);
+            if (lettuceCount < 1) continue;
+            finalDrops[groupedVote.Key] = (voteCount, lettuceCount);
+        }
         
-        en.HandleEvent(e);
+        foreach (var drop in finalDrops)
+        {
+            var pawn = pawns.FirstOrDefault(p => p.Id == drop.Key);
+            if (pawn == null)
+            {
+                logger.LogWarning("Votee {Vote} not found in pawns", drop.Key);
+                continue;
+            }
+            pawn.Actions += drop.Value.lettuce;
+            var scolEvent = new Event
+            {
+                ActionById = Guid.AllBitsSet,
+                ActionToId = pawn.Id,
+                EventText = $"{pawn.DisplayName} received {drop.Value.votes} votes from the Supreme Court of Lettuce and has been awarded {drop.Value.lettuce} lettuce.",
+                NewX = 0,
+                NewY = 0,
+                OldX = 0,
+                OldY = 0,
+                LettuceCount = drop.Value.lettuce,
+                Died = false,
+                ActionType = ActionType.Scol,
+                ScolVoteId = voteId
+            };
+            await hub.Clients.All.SendAsync("Gift", Guid.AllBitsSet, pawn.Id, drop.Value.lettuce);
+            pg.Add(scolEvent);
+            en.HandleEvent(scolEvent);
+        }
+        
+        await pg.SaveChangesAsync();
         
         logger.LogInformation("Gave 1 lettuce to {Count} pawns", pawns.Length);
     }

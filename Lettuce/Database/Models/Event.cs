@@ -23,6 +23,7 @@ public class Event
     
     public Pawn ActionBy { get; set; } = null!;
     public Pawn ActionTo { get; set; } = null!;
+    public Guid? ScolVoteId { get; set; } // If this event is related to a scol vote
 }
 
 public enum ActionType

@@ -3,14 +3,17 @@ using AppAny.Quartz.EntityFrameworkCore.Migrations;
 using AppAny.Quartz.EntityFrameworkCore.Migrations.PostgreSQL;
 using Lettuce.Database.Models;
 using Lettuce.Util.Converters;
+using Microsoft.AspNetCore.DataProtection.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace Lettuce.Database;
 
-public class PgContext(DbContextOptions<PgContext> options) : DbContext(options)
+public class PgContext(DbContextOptions<PgContext> options) : DbContext(options), IDataProtectionKeyContext
 {
     public DbSet<Pawn> Pawns { get; set; }
     public DbSet<Event> Events { get; set; }
+    public DbSet<Vote> Votes { get; set; }
+    public DbSet<DataProtectionKey> DataProtectionKeys { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -48,4 +51,5 @@ public class PgContext(DbContextOptions<PgContext> options) : DbContext(options)
             .Properties<Color>()
             .HaveConversion<ColorValueConverter>();
     }
+
 }

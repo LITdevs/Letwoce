@@ -21,6 +21,8 @@ public class Pawn
     public DateTimeOffset? KilledAt { get; set; }
     public Guid? KilledBy { get; set; }
     
+    public Guid? Vote { get; set; }
+    
     [MaxLength(1024)]
     public string? AvatarUri { get; set; }
 }

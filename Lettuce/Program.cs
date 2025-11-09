@@ -3,6 +3,7 @@ using Lettuce.Hubs;
 using Lettuce.Jobs;
 using Lettuce.Util;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using Quartz;
 using Quartz.Impl.AdoJobStore;
@@ -26,6 +27,10 @@ public class Program
             opt.UseNpgsql(builder.Configuration.GetConnectionString("Postgres"));
             opt.UseOpenIddict();
         });
+        
+        builder.Services.AddDataProtection()
+            .PersistKeysToDbContext<PgContext>();
+        
         builder.Services.AddSignalR();
         GridWidth = builder.Configuration.GetValue<int>("Lettuce:GridWidth", 35); 
         GridHeight = builder.Configuration.GetValue<int>("Lettuce:GridHeight", 25); 
@@ -63,7 +68,7 @@ public class Program
             {
                 options.LoginPath = "/login";
                 options.LogoutPath = "/logout";
-                options.ExpireTimeSpan = TimeSpan.FromHours(8);
+                options.ExpireTimeSpan = TimeSpan.FromHours(48);
                 options.SlidingExpiration = true;
             });
 
