@@ -36,7 +36,7 @@
             <button><img src="/assets/pawn_dead.png"> events</button>
             <button><i class="fa-solid fa-crosshairs" style="color: red"></i> ranges</button>
         </div>
-        <span id="pcount" class="pcount">? fighter online</span>
+        <span id="pcount">? fighter online</span>
     </div>
 </div>
 
@@ -45,19 +45,6 @@
     <i style="display:none" id="connection-indicator-disconnected" class="fa-regular fa-wifi-slash"></i>
     <i style="display:none" id="connection-indicator-connecting" class="fa-regular fa-wifi-slash"></i>
 </div>
-
-<button onclick="moveRelative(0, -1)">Move up!</button>
-<button onclick="moveRelative(0, 1)">Move down!</button>
-<button onclick="moveRelative(-1, 0)">Move left!</button>
-<button onclick="moveRelative(1, 0)">Move right!</button>
-
-<button onclick="moveRelative(1, -1)">Move rightup!</button>
-<button onclick="moveRelative(-1, -1)">Move leftup!</button>
-<button onclick="moveRelative(1, 1)">Move rightdown!</button>
-<button onclick="moveRelative(-1, 1)">Move leftdown!</button>
-
-<input type="text" id="talkbox"/>
-<input type="submit" onclick="talk()" value="Speak" />
 
 <script>
     const MY_UUID = "@Model.OwnPawn?.Id.ToString()";
@@ -103,12 +90,13 @@
         const viewport = new pixi_viewport.Viewport({
             screenWidth: window.innerWidth, screenHeight: window.innerHeight,
             worldWidth: TILE_SIZE*GRID_WIDTH, worldHeight: TILE_SIZE*GRID_HEIGHT, events: app.renderer.events
-        }); viewport.drag().pinch().wheel().decelerate().clampZoom({minScale:0.1})
+        }); viewport.drag().pinch().wheel().decelerate().clampZoom({minScale:0.1, maxScale:3})
 
         const turtle = new PIXI.Graphics();
         const tooltip = new PIXI.DOMContainer();
+        window.lettuce.tooltip = tooltip;
         tooltip.element.classList.add("pointerphobe");
-        tooltip.element.innerHTML = `<div id="tooltip"><span id="tilecoords"></span>&bull;<span id="hoveredpawn">Nobody</span></div>`
+        tooltip.element.innerHTML = `<div id="tooltip"><span id="tileinfo"><span id="tilecoords"></span>&bull;<span id="hoveredpawn">Nobody</span></span><span id="actions"></span></div>`
 
         turtle.zIndex = -1;
 
@@ -118,24 +106,41 @@
             tooltip.scale = 1/viewport.scale.x;
         })
 
+        let dragging = false;
         viewport.on('pointermove', (event) => {
             const pos = viewport.toWorld(event.global);
-            const tile = {x:Math.floor(pos.x/TILE_SIZE), y:Math.floor(pos.y/TILE_SIZE)};
-
-            // const pawn = window.lettuce.pawns.find(pawn => pawn.x === tile.x && pawn.y === tile.y);
-
+            const tile = posToTile(pos);
+            const pawn = window.lettuce.pawns.find(pawn => pawn.x === tile.x && pawn.y === tile.y);
+            
+            if(tooltip.locked) return;
+            
             tooltip.element.querySelector("#tilecoords").innerText = `(${tile.x},${tile.y})`;
+            tooltip.element.querySelector("#hoveredpawn").innerText = pawn ? pawn.displayName : "Nobody";
             tooltip.position.set(pos.x+20,pos.y)
-            // console.log(event)
         });
-        viewport.on('click', (event) => {
+        viewport.on('pointerup', (event) => {
             const pos = viewport.toWorld(event.global);
-            const tile = {x:Math.floor(pos.x/TILE_SIZE), y:Math.floor(pos.y/TILE_SIZE)};
-
-            // const pawn = window.lettuce.pawns.find(pawn => pawn.x === tile.x && pawn.y === tile.y);
-
+            const tile = posToTile(pos);
+            const pawn = window.lettuce.pawns.find(pawn => pawn.x === tile.x && pawn.y === tile.y);
+            
+            if(dragging) return;
+            
+            tooltip.locked = true;
+            tooltip.element.classList.remove("pointerphobe");
+            tooltip.element.querySelector("#actions").innerHTML = "";
             tooltip.element.querySelector("#tilecoords").innerText = `(${tile.x},${tile.y})`;
+            tooltip.element.querySelector("#hoveredpawn").innerText = pawn ? pawn.displayName : "Nobody";
+            tooltip.element.querySelector("#actions").appendChild(mkAction("person-walking", "Move here", ()=>connection.invoke("MoveTo",tile.x,tile.y)))
+            tooltip.element.querySelector("#actions").appendChild(mkAction("hand-holding-heart", "Gift lettuce", ()=>resetTooltip(tooltip)))
+            tooltip.element.querySelector("#actions").appendChild(mkAction("face-angry", "Attack", ()=>resetTooltip(tooltip)))
+            tooltip.element.querySelector("#actions").appendChild(mkAction("ban", "Cancel"))
+            tooltip.position.set(pos.x+20,pos.y);
         });
+        viewport.on('drag-start', () => {
+            resetTooltip(tooltip);
+            dragging = true;
+        })
+        viewport.on('drag-end', () => setTimeout(() => dragging = false, 0))
 
         viewport.addChild(tooltip);
         viewport.addChild(turtle);
@@ -147,20 +152,10 @@
             const sprite = viewport.addChild(new PIXI.Sprite(window.lettuce.pawnTexture));
             sprite.anchor.set(0.5);
             let color = pawn.color.name;
-            // if (color.length > 6) {
-            //     color = pawn.color.slice(2);
-            // }
             sprite.tint = "0x" + color;
             sprite.width = sprite.height = PAWN_SIZE;
             sprite.eventMode = "static";
             sprite.pawnID = pawn.id;
-            sprite.on('pointerout', (event) => {
-                tooltip.element.querySelector("#hoveredpawn").innerText = "Nobody";
-            })
-            sprite.on('pointermove', (event) => {
-                const pawn = window.lettuce.pawns.find(pawn => pawn.id === event.target.pawnID);
-                tooltip.element.querySelector("#hoveredpawn").innerText = pawn.displayName;
-            });
             moveToTile(sprite, pawn.x, pawn.y, false)
             window.lettuce.pawnSprites[pawn.id] = sprite;
         })
@@ -269,7 +264,7 @@
     })
     
     function updateLiveCount(count) {
-        document.getElementById("pcount").innerHTML = `${count} fighter${count > 1 ? "s" : ""} online`;
+        document.getElementById("pcount").innerHTML = `${count} fighter${count !== 1 ? "s" : ""} online`;
     }
     
     async function attack(id) {
@@ -280,20 +275,10 @@
         await connection.invoke("Gift", id);
     }
     
-    async function moveRelative(x, y) {
-        let pawn = window.lettuce.pawns.find(p => p.id === "@(Html.Raw(User.GetClaim("pawnId")))");
-        await connection.invoke("MoveTo", pawn.x+x, pawn.y+y);
-    }
-    
-    async function talk() {
-        let textbox = document.getElementById("talkbox");
-        let msg = textbox.value;
-        textbox.value = "";
-        await connection.invoke("Speak", msg);
-    }
-    
     // Leafy Green
-
+    
+    const posToTile = (pos) => ({x:Math.floor(pos.x/TILE_SIZE),y:Math.floor(pos.y/TILE_SIZE)});
+    const isDiffTile = (tile1,tile2) => tile1.x !== tile2.x || tile1.y !== tile2.y;
     const moveToTile = async (sprite, tx, ty, animate = true) => {
         const sx = tx * TILE_SIZE + TILE_SIZE / 2; const sy = ty * TILE_SIZE + TILE_SIZE / 2;
         return animate ? move(sprite, tx * TILE_SIZE + TILE_SIZE / 2, ty * TILE_SIZE + TILE_SIZE / 2) : sprite.position.set(sx,sy);
@@ -302,7 +287,6 @@
         if(sprite.animControl) {
             sprite.animControl.abort();
             sprite.animControl = null;
-            //return sprite.position.set(x, y);
         }
 
         sprite.animControl = new AbortController();
@@ -334,6 +318,20 @@
         turtle.rect(0,0,TILE_SIZE*GRID_WIDTH,TILE_SIZE*GRID_HEIGHT).stroke({width: width})
     }
     
-    
+    function resetTooltip(tooltip = window.lettuce.tooltip) {
+        tooltip.locked = false;
+        tooltip.element.classList.add("pointerphobe");
+        tooltip.element.querySelector("#hoveredpawn").innerText = "Nobody";
+        tooltip.element.querySelector("#actions").innerHTML = "";
+    }
+    function mkAction(icon, text, onclick = () => {}) {
+        const action = document.createElement("button");
+        action.innerHTML = `<i class="fa-solid fa-${icon}"></i> ${text}`;
+        action.onclick = () => {
+            onclick();
+            resetTooltip()
+        };
+        return action;
+    }
     
 </script>

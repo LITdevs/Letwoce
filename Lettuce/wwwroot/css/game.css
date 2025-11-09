@@ -99,6 +99,7 @@ body {
 
     display: flex;
     gap: .2em;
+    align-items: center;
 }
 #stats .tabs button:hover {
     background: rgb(90, 90, 90);
@@ -107,7 +108,7 @@ body {
     width: 1.3em;
     height: 1.3em;
 }
-#stats .pcount {
+#stats #pcount {
     font-size: 1.7em;
 }
 .aviebox .info {
@@ -116,9 +117,21 @@ body {
 }
 .aviebox .health {
     display: flex;
+    align-items: center;
+    gap: .3em;
+}
+.fa-heart {
+    color: rgb(242, 71, 71);
+}
+.fa-heart-broken {
+    color: rgb(66, 71, 71);
 }
 .aviebox .units img {
     width: 2em;
+    height: 2em;
+}
+.aviebox .units i {
+    font-size: 1.5em;
 }
 .aviebox .pfp {
     height: 6em;
@@ -173,9 +186,36 @@ body {
 }
 #tooltip {
     padding: .5em;
-    max-width: 15em;
+    white-space: nowrap;
     background: rgb(30,30,30);
 
     display: flex;
+    flex-direction: column;
+}
+#tooltip #tileinfo {
+    display: flex;
     gap: .2em;
+}
+#tooltip #actions {
+    pointer-events: auto;
+}
+#tooltip #actions {
+    display: flex;
+    flex-direction: column;
+}
+#tooltip #actions button {
+    border: none;
+    background-color: rgb(30,30,30);
+    color: white;
+    font-family: "IBM Plex Sans", system-ui, sans-serif;
+    cursor: pointer;
+    font-size: 1.2em;
+    display: flex;
+    justify-content: left;
+    gap: .3em;
+    padding: .3em;
+    border-top: 2px dashed rgb(109, 109, 109);
+}
+#tooltip #actions button:first-child {
+    margin-top: .3em;
 }
