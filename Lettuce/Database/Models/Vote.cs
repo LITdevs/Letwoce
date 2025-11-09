@@ -11,6 +11,7 @@ public class Vote
     public Guid VoterId { get; set; } // PK who voted
     public Guid DropId { get; set; } // ID of associated lettuce drop event
     public Guid VoteeId { get; set; }
+    public DateTimeOffset VoteTime { get; set; } = DateTimeOffset.UtcNow;
 
     public Pawn Voter { get; set; } = null!;
     public Pawn Votee { get; set; } = null!;

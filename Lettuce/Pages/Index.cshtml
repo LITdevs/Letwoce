@@ -1,30 +1,103 @@
 ﻿@page
-@using System.Security.Claims
-@using OpenIddict.Abstractions
 @model IndexModel
 @{
     ViewData["Title"] = "Lettuce Fighters";
 }
 <link rel="stylesheet" href="~/css/home.css" asp-append-version="true"/>
+<script src="~/js/chartjs/dist/chart.umd.min.js" asp-append-version="true"></script>
 
 <div class="content text-center">
     <div class="card-center max-w-screen-md" style="margin-top:1.5rem">
 
         <h3 class="font-bold" style="margin-bottom: 0.5rem;margin-top: 0.25rem">Welcome to Lettuce Fighters!</h3>
-        <p style="margin-top: 0.5rem"><i>Lettuce Fighters</i> is a mostly unoriginal game of murder, backstabbing and delicious lettuce.</p>
-        
+        <p style="margin-top: 0.5rem"><i>Lettuce Fighters</i> is a mostly unoriginal game of murder, backstabbing and
+            delicious lettuce.</p>
+
         <hr class="my-2">
-        
+
         <div style="display:flex;flex-direction: row;justify-content: space-evenly">
             <div>
                 <span class="font-bold align-top">Participant</span><br>
-                <a href="/login"><button class="btn">Log in</button></a>
+                <a href="/login">
+                    <button class="btn">Log in</button>
+                </a>
             </div>
             <div>
                 <span class="font-bold align-top">Spectator</span><br>
-                <a href="/game"><button class="btn">Spectate</button></a>
+                <a href="/game">
+                    <button class="btn">Spectate</button>
+                </a>
             </div>
         </div>
+
+    </div>
+
+    <div class="card-center max-w-screen-md" style="margin-top:3rem">
+
+        <h3 class="font-bold" style="margin-bottom: 0.5rem;margin-top: 0.25rem">Last Supreme Court of Lettuce vote</h3>
+        <hr class="my-2">
+
+        @{
+            if (Model.VoteHeld)
+            {
+                <a href="#" onclick="selVote++;renderChart()">Previous</a> <span id="date"></span> <a href="#" onclick="selVote--;renderChart()">Next</a>
+                <canvas id="scolChart"></canvas>
+                <script>
+                    let selVote = 0;
+                    let scolVote = @Json.Serialize(Model.LastVote);
+                    scolVote = scolVote.sort((a, b) => {
+                        return new Date(b.timestamp) - new Date(a.timestamp)
+                    });
+                    let ctx = document.getElementById("scolChart");
+                    
+                    let chart;
+                    let chartData;
+                    let voteKey;
+                    function renderChart() {
+                        if (selVote < 0) {
+                            selVote = 0;
+                            return;
+                        }
+                        if (selVote > scolVote.length - 1) {
+                            selVote = scolVote.length -1;
+                            return;
+                        }
+                        document.getElementById("date").innerHTML = new Date(scolVote[selVote].timestamp).toLocaleString();
+                        chartData = {
+                            type: "bar",
+                            data: {
+                                labels: Object.keys(scolVote[selVote].votes),
+                                datasets: [{
+                                    label: `Votes on ${new Date(scolVote[selVote].timestamp).toLocaleString()}`,
+                                    data: Object.values(scolVote[selVote].votes).map(v => v.votes),
+                                    backgroundColor: Object.values(scolVote[selVote].votes).map(v => v.color1),
+                                    borderColor: Object.values(scolVote[selVote].votes).map(v => v.color2),
+                                    borderWidth: 1
+                                }]
+                            },
+                            options: {
+                                scales: {
+                                    y: {
+                                        beginAtZero: true
+                                    }
+                                }
+                            }
+                        }
+                        if (!chart) chart = new Chart(ctx, chartData);
+                        else {
+                            chart.destroy();
+                            chart = new Chart(ctx, chartData);
+                        }
+                    }
+                    renderChart();
+                </script>
+            }
+            else
+            {
+                <p>No votes yet. Check back when someone has died.</p>
+            }
+        }
+
 
     </div>
 </div>

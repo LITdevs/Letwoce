@@ -40,6 +40,7 @@ public class LettuceDropJob(PgContext pg, ILogger<LettuceDropJob> logger, IHubCo
 
         var votes = await pg.Pawns.Where(p => p.Vote != null).Select(p => new { p.Id, p.Vote }).ToArrayAsync();
         var voteId = Guid.NewGuid();
+        var voteTime = DateTimeOffset.UtcNow;
         foreach (var vote in votes)
         {
             var v = new Vote
@@ -48,6 +49,7 @@ public class LettuceDropJob(PgContext pg, ILogger<LettuceDropJob> logger, IHubCo
                 VoterId = vote.Id,
                 DropId = dropEvent.Id,
                 VoteeId = vote.Vote!.Value,
+                VoteTime = voteTime
             };
             pg.Add(v);
         }

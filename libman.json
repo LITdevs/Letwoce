@@ -9,6 +9,13 @@
         "dist/browser/signalr.js",
         "dist/browser/signalr.min.js"
       ]
+    },
+    {
+      "library": "chart.js@latest",
+      "destination": "wwwroot/js/chartjs",
+      "files": [
+        "dist/chart.umd.min.js"
+      ]
     }
   ]
 }

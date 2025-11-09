@@ -376,4 +376,29 @@ public class LettuceHub : Hub
         await pg.SaveChangesAsync();
         return true;
     }
+
+    public async Task<VoteData[]> GetVoteData(VoteService voteSvc)
+    {
+        return await voteSvc.GetVotes();
+    }
+
+    public async Task<EventDto[]> GetEvents(PgContext pg)
+    {
+        return await pg.Events.AsNoTracking().OrderByDescending(e => e.Timestamp).Select(e =>
+            new EventDto
+            {
+                Timestamp = e.Timestamp,
+                Id = e.Id,
+                EventText = e.EventText,
+                ActionType = e.ActionType
+            }).Take(50).ToArrayAsync();
+    }
+}
+
+public record EventDto
+{
+    public DateTimeOffset Timestamp;
+    public Guid Id;
+    public string EventText;
+    public ActionType ActionType;
 }

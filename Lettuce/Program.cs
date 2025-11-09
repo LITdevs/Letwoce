@@ -112,6 +112,7 @@ public class Program
         builder.Services.AddSingleton<HttpClient>();
         builder.Services.Configure<NotifierSettings>(builder.Configuration.GetSection("Notifier"));
         builder.Services.AddScoped<EventNotifier>();
+        builder.Services.AddScoped<VoteService>();
 
         builder.Services.AddQuartz(q =>
         {

@@ -44,3 +44,10 @@
     border-color: #e5e7eb;
     font-size: 1rem
 }
+
+a:visited {
+    color: deepskyblue;
+}
+a {
+     color: deepskyblue;
+ }

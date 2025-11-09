@@ -1,17 +1,24 @@
+using Lettuce.Database;
+using Lettuce.Database.Models;
+using Lettuce.Util;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.EntityFrameworkCore;
 
 namespace Lettuce.Pages;
 
-public class IndexModel : PageModel
+public class IndexModel(PgContext pg, ILogger<IndexModel> logger, VoteService voteSvc) : PageModel
 {
-    private readonly ILogger<IndexModel> _logger;
-
-    public IndexModel(ILogger<IndexModel> logger)
+    public VoteData[] LastVote { get; set; }
+    public bool VoteHeld { get; set; } = false;
+    
+    public async Task<IActionResult> OnGetAsync()
     {
-        _logger = logger;
+        if (!await pg.Votes.AnyAsync()) return Page();
+        VoteHeld = true;
+        LastVote = await voteSvc.GetVotes();
+        return Page();
     }
 
-    public void OnGet()
-    {
-    }
+
 }
