@@ -102,6 +102,7 @@ public class Program
                         options.SetClientSecret(discordSettings!.ClientSecret);
                         options.SetRedirectUri("discord-callback");
                     });
+                opt.UseDataProtection();
             });
 
         builder.Services.AddSingleton<HttpClient>();
@@ -130,6 +131,16 @@ public class Program
                 .ForJob(jobKey)
                 .WithCronSchedule("0 0 14 * * ?")
                 .WithDescription("Daily cron trigger"));
+            
+            var logKey = new JobKey("logKey");
+            q.AddJob<PlayerCountLogJob>(logKey, j => 
+                j.WithDescription("Player count statistics collection"));
+
+            q.AddTrigger(t => t
+                .WithIdentity("5Min")
+                .ForJob(logKey)
+                .WithCronSchedule("0 */5 * * * ?")
+                .WithDescription("5min cron trigger"));
         });
 
         builder.Services.AddQuartzHostedService(q =>

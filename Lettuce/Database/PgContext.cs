@@ -13,6 +13,7 @@ public class PgContext(DbContextOptions<PgContext> options) : DbContext(options)
     public DbSet<Pawn> Pawns { get; set; }
     public DbSet<Event> Events { get; set; }
     public DbSet<Vote> Votes { get; set; }
+    public DbSet<PlayerCountLog> PlayerCountLogs { get; set; }
     public DbSet<DataProtectionKey> DataProtectionKeys { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

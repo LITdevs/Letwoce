@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics.CodeAnalysis;
+using System.Drawing;
 using System.Security.Claims;
 using Lettuce.Database;
 using Lettuce.Database.Models;
@@ -178,21 +179,6 @@ public class LettuceHub : Hub
         en.HandleEvent(e);
         if (!attackedPawn.Alive)
         {
-            var voters = await pg.Pawns.Where(p => p.Vote == attackedPawn.Id).ToArrayAsync();
-            var pings = string.Join(", ", voters.Select(v => $"<@{v.DiscordId}>"));
-            var e2 = new Event
-            {
-                ActionById = pawn.Id,
-                ActionToId = attackedPawn.Id,
-                EventText = $"{pings} the fighter you voted for has been killed by {pawn.DisplayName}. Please choose a new fighter to support.",
-                LettuceCount = 0,
-                Died = false,
-                ActionType = ActionType.Attack
-            };
-            foreach (var voter in voters)
-            {
-                voter.Vote = null;
-            }
             var e3 = new Event
             {
                 ActionById = pawn.Id,
@@ -203,7 +189,26 @@ public class LettuceHub : Hub
                 ActionType = ActionType.Attack
             };
             en.HandleEvent(e3);
-            en.HandleEvent(e2);
+            var voters = await pg.Pawns.Where(p => p.Vote == attackedPawn.Id).ToArrayAsync();
+            var pings = string.Join(", ", voters.Select(v => $"<@{v.DiscordId}>"));
+            if (voters.Length > 0)
+            {
+                
+                var e2 = new Event
+                {
+                    ActionById = pawn.Id,
+                    ActionToId = attackedPawn.Id,
+                    EventText = $"{pings} the fighter you voted for has been killed by {pawn.DisplayName}. Please choose a new fighter to support.",
+                    LettuceCount = 0,
+                    Died = false,
+                    ActionType = ActionType.Attack
+                };
+                foreach (var voter in voters)
+                {
+                    voter.Vote = null;
+                }
+                en.HandleEvent(e2);
+            }
         }
         await pg.SaveChangesAsync();
         await Clients.All.SendAsync("Attack", pawn.Id, attackedPawn.Id);
@@ -219,14 +224,14 @@ public class LettuceHub : Hub
         var pawn = await pg.Pawns.FirstOrDefaultAsync(p => p.Id == pawnId);
         if (pawn == null)
         {
-            logger.LogInformation("Rejecting ggift due to gifter pawn not found");
+            logger.LogInformation("Rejecting gift due to gifter pawn not found");
             return false;
         }
 
         var giftedPawn = await pg.Pawns.FirstOrDefaultAsync(p => p.Id == giftedPawnId);
         if (giftedPawn == null)
         {
-            logger.LogInformation("Rejecting ggift due to giftee pawn not found");
+            logger.LogInformation("Rejecting gift due to giftee pawn not found");
             return false;
         }
         
@@ -323,12 +328,52 @@ public class LettuceHub : Hub
         var pawnId = Guid.Parse(Context.User!.GetClaim("pawnId")!);
         var pawn = await pg.Pawns.FirstOrDefaultAsync(p => p.Id == pawnId);
         if (pawn == null) return false;
-        if (pawn.DiscordId != "1029431168094978150") return false;
+        if (!pawn.IsAdmin) return false;
         
         var jobKey = new JobKey("LettuceDrop");
         var allSchedulers = await factory.GetAllSchedulers();
         var scheduler = allSchedulers[0];
         await scheduler.TriggerJob(jobKey);
+        return true;
+    }
+
+    [Authorize]
+    public async Task<bool> RemovePawn(PgContext pg, Guid pawnToRemove)
+    {
+        var pawnId = Guid.Parse(Context.User!.GetClaim("pawnId")!);
+        var pawn = await pg.Pawns.FirstOrDefaultAsync(p => p.Id == pawnId);
+        if (pawn == null) return false;
+        if (!pawn.IsAdmin) return false;
+
+        await pg.Pawns.Where(p => p.Id == pawnToRemove).ExecuteDeleteAsync();
+        return true;
+    }
+    
+    [Authorize]
+    public async Task<bool> AddPawn(PgContext pg, string discordId, string initialName)
+    {
+        var pawnId = Guid.Parse(Context.User!.GetClaim("pawnId")!);
+        var pawn = await pg.Pawns.FirstOrDefaultAsync(p => p.Id == pawnId);
+        if (pawn == null) return false;
+        if (!pawn.IsAdmin) return false;
+
+        pg.Add(new Pawn
+        {
+            DiscordId = discordId,
+            DisplayName = initialName,
+            X = Random.Shared.Next(0, Program.GridWidth),
+            Y = Random.Shared.Next(0, Program.GridHeight),
+            Health = 3,
+            Actions = 0,
+            Color = Color.FromArgb(255, Random.Shared.Next(0, 255), Random.Shared.Next(0, 255),
+                Random.Shared.Next(0, 255)),
+            KilledAt = null,
+            KilledBy = null,
+            Vote = null,
+            AvatarUri = null,
+            IsAdmin = false
+        });
+        await pg.SaveChangesAsync();
         return true;
     }
 }

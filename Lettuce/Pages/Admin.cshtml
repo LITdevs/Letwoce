@@ -55,6 +55,18 @@
 
 <button onclick="ldrop()">Run lettuce drop</button>
 
+<ul>
+    @{
+        foreach (var pawn in Model.Pawns)
+        {
+            <li>@pawn.Id | @pawn.DiscordId | @pawn.DisplayName | <a href="#" onclick="removePawn('@pawn.Id.ToString()')">Remove</a></li>
+        }
+    }
+</ul>
+<input id="discordId" type="text" placeholder="discord id" />
+<input id="initialName" type="text" placeholder="initial name" />
+<button onclick="addPawn()">Add pawn</button>
+
 <script>
     const GRID_WIDTH = @Program.GridWidth;
     const GRID_HEIGHT = @Program.GridHeight;
@@ -223,5 +235,17 @@
     
     async function ldrop() {
         await connection.invoke("LDrop");
+    }
+
+    async function removePawn(id) {
+        await connection.invoke("RemovePawn", id)
+        window.location.reload();
+    }
+
+    async function addPawn() {
+        let discordId = document.getElementById("discordId").value;
+        let initialName = document.getElementById("initialName").value;
+        await connection.invoke("AddPawn", discordId, initialName)
+        window.location.reload();
     }
 </script>
