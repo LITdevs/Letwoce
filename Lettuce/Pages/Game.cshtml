@@ -19,14 +19,14 @@
         <div class="info">
             <span class="name">@Model.OwnPawn?.DisplayName</span>
             <div class="units">
-                <div class="health">
+                <span class="health">
                     <i style="" class="fa-solid fa-heart@(Model.OwnPawn?.Health < 1 ? "-crack" : "")"></i>
                     <i class="fa-solid fa-heart@(Model.OwnPawn?.Health < 2 ? "-crack" : "")"></i>
                     <i class="fa-solid fa-heart@(Model.OwnPawn?.Health < 3 ? "-crack" : "")"></i>
-                 </div>
-                <div class="lettuce">
+                 </span>
+                <span class="lettuce">
                     <img src="/assets/lettuce.png" alt=""> <span class="lettucecount">@Model.OwnPawn?.Actions</span>
-                </div>
+                </span>
             </div>
         </div>
     </div>
@@ -96,7 +96,7 @@
         const tooltip = new PIXI.DOMContainer();
         window.lettuce.tooltip = tooltip;
         tooltip.element.classList.add("pointerphobe");
-        tooltip.element.innerHTML = `<div id="tooltip"><span id="tileinfo"><span id="tilecoords"></span>&bull;<span id="hoveredpawn">Nobody</span></span><span id="actions"></span></div>`
+        tooltip.element.innerHTML = `<div id="tooltip"><div id="tileinfowrap"><div id="tiledata"><span id="tileinfo"><span id="tilecoords"></span>&bull;<span id="hoveredpawn">Nobody</span></span><span id="hoveredunits"></span></div><img class="pfp" src=""></div><span id="actions"></span></div>`
 
         turtle.zIndex = -1;
 
@@ -113,28 +113,34 @@
             const pawn = window.lettuce.pawns.find(pawn => pawn.x === tile.x && pawn.y === tile.y);
             
             if(tooltip.locked) return;
-            
-            tooltip.element.querySelector("#tilecoords").innerText = `(${tile.x},${tile.y})`;
-            tooltip.element.querySelector("#hoveredpawn").innerText = pawn ? pawn.displayName : "Nobody";
-            tooltip.position.set(pos.x+20,pos.y)
+            mkTooltip(tile,pawn,pos);
         });
         viewport.on('pointerup', (event) => {
             const pos = viewport.toWorld(event.global);
             const tile = posToTile(pos);
             const pawn = window.lettuce.pawns.find(pawn => pawn.x === tile.x && pawn.y === tile.y);
+            const myPawn = window.lettuce.pawns.find(pawn => pawn.id === MY_UUID);
+            const distance = tileDistance(tile);
             
             if(dragging) return;
             
             tooltip.locked = true;
+            mkTooltip(tile,pawn,pos);
             tooltip.element.classList.remove("pointerphobe");
             tooltip.element.querySelector("#actions").innerHTML = "";
-            tooltip.element.querySelector("#tilecoords").innerText = `(${tile.x},${tile.y})`;
-            tooltip.element.querySelector("#hoveredpawn").innerText = pawn ? pawn.displayName : "Nobody";
-            tooltip.element.querySelector("#actions").appendChild(mkAction("person-walking", "Move here", ()=>connection.invoke("MoveTo",tile.x,tile.y)))
-            tooltip.element.querySelector("#actions").appendChild(mkAction("hand-holding-heart", "Gift lettuce", ()=>resetTooltip(tooltip)))
-            tooltip.element.querySelector("#actions").appendChild(mkAction("face-angry", "Attack", ()=>resetTooltip(tooltip)))
-            tooltip.element.querySelector("#actions").appendChild(mkAction("ban", "Cancel"))
-            tooltip.position.set(pos.x+20,pos.y);
+            
+            if(pawn !== myPawn) {
+                if(!pawn) {
+                    if(distance <= 1.5) tooltip.element.querySelector("#actions").appendChild(mkAction("person-walking", "Move here", () => connection.invoke("MoveTo", tile.x, tile.y)))
+                } else if(pawn.alive) {
+                    if(distance <= 4.25) tooltip.element.querySelector("#actions").appendChild(mkAction("face-angry", "Attack", () => attack(pawn.id)))
+                    if(distance <= 7.5) tooltip.element.querySelector("#actions").appendChild(mkAction("hand-holding-heart", "Gift lettuce", () => gift(pawn.id)))
+                }
+            } else {
+                tooltip.element.querySelector("#actions").appendChild(mkAction("face-smile-wink", "It's me!"));
+            }
+            
+            tooltip.element.querySelector("#actions").appendChild(mkAction("ban", "Cancel"));
         });
         viewport.on('drag-start', () => {
             resetTooltip(tooltip);
@@ -279,6 +285,28 @@
     
     const posToTile = (pos) => ({x:Math.floor(pos.x/TILE_SIZE),y:Math.floor(pos.y/TILE_SIZE)});
     const isDiffTile = (tile1,tile2) => tile1.x !== tile2.x || tile1.y !== tile2.y;
+    const tileDistance = (tile1, tile2=window.lettuce.pawns.find(pawn=>pawn.id===MY_UUID)) => {
+        // from lettuce1
+        let diffX = tile1.x - tile2.x;
+        let diffY = tile1.y - tile2.y;
+        return Math.sqrt(diffX * diffX + diffY * diffY);
+    }
+    const deathStamp = (pawn) => {
+        if(!pawn?.killedAt) return "";
+        return `<i class="fa-solid fa-tombstone"></i> ${((Date.now() - new Date(pawn.killedAt).getTime()) / 1000 / 60 / 60).toFixed(2)} hours`; //from lettuce1
+    }
+    const unitStamp = (pawn = window.lettuce.pawns.find(pawn=>pawn.id===MY_UUID)) => {
+        if(!pawn) return "";
+        return `<span class="health">
+                    <i class="fa-solid fa-heart${pawn.health<1?"-crack":""}"></i>
+                    <i class="fa-solid fa-heart${pawn.health<2?"-crack":""}"></i>
+                    <i class="fa-solid fa-heart${pawn.health<3?"-crack":""}"></i>
+                 </span>
+                <span class="lettuce">
+                    <img src="/assets/lettuce.png" alt=""> <span class="lettucecount">${pawn.actions}</span>
+                </span>`
+    }
+    
     const moveToTile = async (sprite, tx, ty, animate = true) => {
         const sx = tx * TILE_SIZE + TILE_SIZE / 2; const sy = ty * TILE_SIZE + TILE_SIZE / 2;
         return animate ? move(sprite, tx * TILE_SIZE + TILE_SIZE / 2, ty * TILE_SIZE + TILE_SIZE / 2) : sprite.position.set(sx,sy);
@@ -324,12 +352,25 @@
         tooltip.element.querySelector("#hoveredpawn").innerText = "Nobody";
         tooltip.element.querySelector("#actions").innerHTML = "";
     }
+    function mkTooltip(tile, pawn, pos, tooltip = window.lettuce.tooltip) {
+        tooltip.element.querySelector("#tilecoords").innerText = `(${tile.x},${tile.y})`;
+        tooltip.element.querySelector("#hoveredpawn").innerText = pawn ? pawn.displayName : "Nobody";
+        tooltip.element.querySelector(".pfp").src = pawn?.avatarUri ? pawn.avatarUri : "";
+        if(pawn?.killedAt) {
+            tooltip.element.querySelector("#hoveredunits").innerHTML = deathStamp(pawn);
+        } else if(pawn) {
+            tooltip.element.querySelector("#hoveredunits").innerHTML = unitStamp(pawn);
+        } else {
+            tooltip.element.querySelector("#hoveredunits").innerHTML = "";
+        }
+        tooltip.position.set(pos.x+20,pos.y);
+    }
     function mkAction(icon, text, onclick = () => {}) {
         const action = document.createElement("button");
         action.innerHTML = `<i class="fa-solid fa-${icon}"></i> ${text}`;
         action.onclick = () => {
             onclick();
-            resetTooltip()
+            resetTooltip();
         };
         return action;
     }
