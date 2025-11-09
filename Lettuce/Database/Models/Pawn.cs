@@ -25,4 +25,6 @@ public class Pawn
     
     [MaxLength(1024)]
     public string? AvatarUri { get; set; }
+
+    public bool IsAdmin { get; set; } = false;
 }

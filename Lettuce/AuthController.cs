@@ -1,7 +1,10 @@
-﻿using System.Security.Claims;
+﻿using System.Drawing;
+using System.Security.Claims;
 using Lettuce.Database;
+using Lettuce.Database.Models;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using OpenIddict.Abstractions;
 using OpenIddict.Client.AspNetCore;
 using OpenIddict.Client.WebIntegration;
@@ -90,12 +93,35 @@ public class AuthController(ILogger<AuthController> logger, PgContext pg) : Cont
         {
             pawn.DisplayName = identity.GetClaim(ClaimTypes.Name) ?? "Unknown";
             pawn.AvatarUri = identity.GetClaim("avatar");
-            identity.SetClaim("pawnId", pawn.Id.ToString());
         }
         else
         {
-            return Unauthorized("Only players may log in");
+            var pawnCount = await pg.Pawns.CountAsync();
+            if (pawnCount > 1)
+            {
+                return Unauthorized("Only players may log in");
+            }
+
+            pawn = new Pawn
+            {
+                DiscordId = identity.GetClaim(ClaimTypes.NameIdentifier)!,
+                DisplayName = identity.GetClaim(ClaimTypes.Name) ?? "Unknown",
+                X = Random.Shared.Next(0, Program.GridWidth),
+                Y = Random.Shared.Next(0, Program.GridHeight),
+                Health = 3,
+                Actions = 0,
+                Color = Color.FromArgb(255, Random.Shared.Next(0, 255), Random.Shared.Next(0, 255),
+                    Random.Shared.Next(0, 255)),
+                KilledAt = null,
+                KilledBy = null,
+                Vote = null,
+                AvatarUri = identity.GetClaim("avatar"),
+                IsAdmin = true
+            };
+            pg.Add(pawn);
         }
+
+        identity.SetClaim("pawnId", pawn.Id.ToString());
         await pg.SaveChangesAsync();
         
         return SignIn(new ClaimsPrincipal(identity), properties);
