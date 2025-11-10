@@ -109,7 +109,11 @@
         window.lettuce.tooltip = tooltip;
         tooltip.element.classList.add("pointerphobe");
         tooltip.element.innerHTML = `<div id="tooltip"><div id="tileinfowrap"><div id="tiledata"><span id="tileinfo"><span id="tilecoords"></span>&bull;<span id="hoveredpawn">Nobody</span></span><span id="hoveredunits"></span></div><img class="pfp" src=""></div><span id="actions"></span></div>`
-
+        
+        if (urlParams.get("disableUi")) {
+            tooltip.element.style.display = "none";
+        }
+        
         turtle.zIndex = -1;
 
         drawGrid(turtle);
