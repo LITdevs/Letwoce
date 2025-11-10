@@ -209,6 +209,9 @@ public class LettuceHub : Hub
                 }
                 en.HandleEvent(e2);
             }
+
+            attackedPawn.KilledById = pawn.Id;
+            attackedPawn.KilledAt = DateTimeOffset.UtcNow;
         }
         await pg.SaveChangesAsync();
         await Clients.All.SendAsync("Attack", pawn.Id, attackedPawn.Id);
@@ -284,6 +287,7 @@ public class LettuceHub : Hub
         var pawnId = Guid.Parse(Context.User!.GetClaim("pawnId")!);
         var pawn = await pg.Pawns.FirstOrDefaultAsync(p => p.Id == pawnId);
         if (pawn == null) return false;
+        if (!pawn.Alive) return false;
         message = message.Replace("@everyone", "im a loser");
         message = message.Replace("@here", "i like licking trees");
         message = message.Replace("@", "at");
