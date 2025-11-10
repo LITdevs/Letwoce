@@ -89,9 +89,12 @@
         await app.init({background: "rgb(46,46,46)", resizeTo: document.getElementById("pixi")});
 
         const viewport = new pixi_viewport.Viewport({
-            screenWidth: window.innerWidth, screenHeight: window.innerHeight,
+            screenWidth: document.getElementById("pixi").clientWidth, screenHeight: document.getElementById("pixi").clientHeight,
             worldWidth: TILE_SIZE*GRID_WIDTH, worldHeight: TILE_SIZE*GRID_HEIGHT, events: app.renderer.events
-        }); viewport.drag().pinch().wheel().decelerate().clampZoom({minScale:0.1, maxScale:3})
+        }); viewport.drag().pinch().wheel().decelerate().clampZoom({minScale:0.2, maxScale:3})
+        window.addEventListener("resize", () => {
+            viewport.resize(document.getElementById("pixi").clientWidth, document.getElementById("pixi").clientHeight); 
+        })
 
         const turtle = new PIXI.Graphics();
         const tooltip = new PIXI.DOMContainer();
@@ -140,7 +143,7 @@
             } else if(myPawn) {
                 tooltip.element.querySelector("#actions").appendChild(mkAction("volume", "It's me!", () => new Audio("/sfx/itsme.wav").play()));
                 tooltip.element.querySelector("#actions").appendChild(mkAction("messages", "Chat...", () => connection.invoke("Speak", prompt("What're you gonna say?"))));
-            } else {
+            } else if(@(Model.IsPlayer ? "false" : "true")) {
                 tooltip.element.querySelector("#actions").appendChild(mkAction("right-to-bracket", "Log in", () => location.pathname = "/login"));
             }
             
@@ -253,7 +256,11 @@
         attacker.actions -= 1;
         let attacked = window.lettuce.pawns.find(p => p.id === attackedId);
         attacked.health -= 1;
-        if (attacked.health < 1) attacked.alive = false;
+        if (attacked.health < 1) {
+            attacked.alive = false;
+            const atkSprite = window.lettuce.pawnSprites[attacked.id];
+            if(atkSprite) atkSprite.texture = window.lettuce.deadPawnTexture;
+        }
     })
 
     connection.on("Gift", (attackerId, attackedId, amount) => {
