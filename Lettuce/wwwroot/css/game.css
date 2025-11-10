@@ -215,6 +215,7 @@ body {
     gap: .3em;
     padding: .3em;
     border-top: 2px dashed rgb(109, 109, 109);
+    align-items: center;
 }
 #tooltip #actions button:first-child {
     margin-top: .3em;

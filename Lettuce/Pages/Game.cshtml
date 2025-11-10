@@ -120,7 +120,6 @@
             const tile = posToTile(pos);
             const pawn = window.lettuce.pawns.find(pawn => pawn.x === tile.x && pawn.y === tile.y);
             const myPawn = window.lettuce.pawns.find(pawn => pawn.id === MY_UUID);
-            const distance = tileDistance(tile);
             
             if(dragging) return;
             
@@ -129,15 +128,18 @@
             tooltip.element.classList.remove("pointerphobe");
             tooltip.element.querySelector("#actions").innerHTML = "";
             
-            if(pawn !== myPawn) {
+            if(myPawn && pawn !== myPawn) {
+                const distance = tileDistance(tile);
                 if(!pawn) {
                     if(distance <= 1.5) tooltip.element.querySelector("#actions").appendChild(mkAction("person-walking", "Move here", () => connection.invoke("MoveTo", tile.x, tile.y)))
                 } else if(pawn.alive) {
                     if(distance <= 4.25) tooltip.element.querySelector("#actions").appendChild(mkAction("face-angry", "Attack", () => attack(pawn.id)))
                     if(distance <= 7.5) tooltip.element.querySelector("#actions").appendChild(mkAction("hand-holding-heart", "Gift lettuce", () => gift(pawn.id)))
                 }
-            } else {
+            } else if(myPawn) {
                 tooltip.element.querySelector("#actions").appendChild(mkAction("face-smile-wink", "It's me!"));
+            } else {
+                tooltip.element.querySelector("#actions").appendChild(mkAction("right-to-bracket", "Log in", () => location.pathname = "/login"));
             }
             
             tooltip.element.querySelector("#actions").appendChild(mkAction("ban", "Cancel"));
