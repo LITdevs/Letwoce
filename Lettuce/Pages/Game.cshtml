@@ -99,7 +99,6 @@
             screenWidth: document.getElementById("pixi").clientWidth, screenHeight: document.getElementById("pixi").clientHeight,
             worldWidth: TILE_SIZE*GRID_WIDTH, worldHeight: TILE_SIZE*GRID_HEIGHT, events: app.renderer.events
         }); viewport.drag().pinch().wheel().decelerate().clampZoom({minScale:0.2, maxScale:3})
-        viewport.sortableChildren = true;
         window.lettuce.viewport = viewport;
         window.addEventListener("resize", () => {
             viewport.resize(document.getElementById("pixi").clientWidth, document.getElementById("pixi").clientHeight); 
