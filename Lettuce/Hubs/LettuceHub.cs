@@ -380,7 +380,51 @@ public class LettuceHub : Hub
         await pg.SaveChangesAsync();
         return true;
     }
+    
+    [Authorize]
+    public async Task<bool> Reset(PgContext pg)
+    {
+        var pawnId = Guid.Parse(Context.User!.GetClaim("pawnId")!);
+        var pawn = await pg.Pawns.FirstOrDefaultAsync(p => p.Id == pawnId);
+        if (pawn == null) return false;
+        if (!pawn.IsAdmin) return false;
 
+        var pawns = await pg.Pawns.ToArrayAsync();
+        
+        foreach (var p in pawns)
+        {
+            p.X = Random.Shared.Next(0, Program.GridWidth);
+            p.Y = Random.Shared.Next(0, Program.GridHeight);
+            p.Actions = 0;
+            p.Health = 3;
+            p.Vote = null;
+            p.KilledAt = null;
+            p.KilledById = null;
+        }
+
+        await pg.Events.ExecuteDeleteAsync();
+        await pg.Votes.ExecuteDeleteAsync();
+
+        await pg.SaveChangesAsync();
+        return true;
+    }
+
+    [Authorize]
+    public async Task<bool> ForceMove(PgContext pg, Guid pawnToMoveId, int x, int y)
+    {
+        var pawnId = Guid.Parse(Context.User!.GetClaim("pawnId")!);
+        var pawn = await pg.Pawns.FirstOrDefaultAsync(p => p.Id == pawnId);
+        if (pawn == null) return false;
+        if (!pawn.IsAdmin) return false;
+
+        var pawnToMove = await pg.Pawns.FirstOrDefaultAsync(p => p.Id == pawnToMoveId);
+        if (pawnToMove == null) return false;
+        pawnToMove.X = x;
+        pawnToMove.Y = y;
+        await pg.SaveChangesAsync();
+        return true;
+    }
+    
     public async Task<VoteData[]> GetVoteData(VoteService voteSvc)
     {
         return await voteSvc.GetVotes();

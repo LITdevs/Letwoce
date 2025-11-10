@@ -16,18 +16,33 @@
         <hr class="my-2">
 
         <div style="display:flex;flex-direction: row;justify-content: space-evenly">
-            <div>
-                <span class="font-bold align-top">Participant</span><br>
-                <a href="/login">
-                    <button class="btn">Log in</button>
-                </a>
-            </div>
-            <div>
-                <span class="font-bold align-top">Spectator</span><br>
-                <a href="/game">
-                    <button class="btn">Spectate</button>
-                </a>
-            </div>
+            @{
+                if (Model.IsPlayer)
+                {
+                    
+                    <div>
+                        <span class="font-bold align-top">Participant</span><br>
+                        <a href="/game">
+                            <button class="btn">Enter</button>
+                        </a>
+                    </div>
+                }
+                else
+                {
+                    <div>
+                        <span class="font-bold align-top">Participant</span><br>
+                        <a href="/login">
+                            <button class="btn">Log in</button>
+                        </a>
+                    </div>
+                    <div>
+                        <span class="font-bold align-top">Spectator</span><br>
+                        <a href="/game">
+                            <button class="btn">Spectate</button>
+                        </a>
+                    </div>
+                }
+            }
         </div>
 
     </div>

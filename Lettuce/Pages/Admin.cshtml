@@ -36,6 +36,8 @@
 <input type="text" id="talkbox"/>
 <input type="submit" onclick="talk()" value="Speak" />
 
+<button onclick="ultrareset()">Ultra reset (DANGER)</button>
+
 @{
     if (Model.OwnPawn?.Alive == false)
     {
@@ -60,6 +62,11 @@
         foreach (var pawn in Model.Pawns)
         {
             <li>@pawn.Id | @pawn.DiscordId | @pawn.DisplayName | <a href="#" onclick="removePawn('@pawn.Id.ToString()')">Remove</a></li>
+            <span>
+                X: <input type="number" value="@pawn.X" id="pawn_@pawn.Id.ToString()_x"/>
+                Y: <input type="number" value="@pawn.Y" id="pawn_@pawn.Id.ToString()_y"/>
+                <button onclick="forceMove('@pawn.Id.ToString()')">Force move (no event)</button>
+            </span>
         }
     }
 </ul>
@@ -248,4 +255,19 @@
         await connection.invoke("AddPawn", discordId, initialName)
         window.location.reload();
     }
+    
+    async function ultrareset() {
+        let meow = confirm("Are you absolutely sure you want to bomb?");
+        if (!meow) return alert("Thought so.");
+        await connection.invoke("Reset");
+        window.location.reload();
+    }
+    
+    async function forceMove(id) {
+        let x = Number(document.getElementById(`pawn_${id}_x`).value);
+        let y = Number(document.getElementById(`pawn_${id}_x`).value);
+        await connection.invoke("ForceMove", id, x, y);
+        window.location.reload();
+    }
+    
 </script>
