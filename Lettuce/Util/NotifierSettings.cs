@@ -2,5 +2,5 @@
 
 public class NotifierSettings
 {
-    public string WebhookUri { get; set; }
+    public string WebhookUri { get; set; } = null!;
 }

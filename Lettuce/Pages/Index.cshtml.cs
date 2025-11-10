@@ -7,9 +7,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Lettuce.Pages;
 
-public class IndexModel(PgContext pg, ILogger<IndexModel> logger, VoteService voteSvc) : PageModel
+public class IndexModel(PgContext pg, VoteService voteSvc) : PageModel
 {
-    public VoteData[] LastVote { get; set; }
+    public VoteData[]? LastVote { get; set; }
     public bool VoteHeld { get; set; } = false;
     
     public async Task<IActionResult> OnGetAsync()

@@ -68,9 +68,9 @@ public class AuthController(ILogger<AuthController> logger, PgContext pg) : Cont
 
         // Build the authentication properties based on the properties that were added when the challenge was triggered.
         if (result.Properties?.RedirectUri == "/") result.Properties.RedirectUri = "/game";
-        var properties = new AuthenticationProperties(result.Properties.Items)
+        var properties = new AuthenticationProperties(result.Properties?.Items ?? new Dictionary<string, string?>())
         {
-            RedirectUri = result.Properties.RedirectUri ?? "/game"
+            RedirectUri = result.Properties?.RedirectUri ?? "/game"
         };
 
         // If needed, the tokens returned by the authorization server can be stored in the authentication cookie.

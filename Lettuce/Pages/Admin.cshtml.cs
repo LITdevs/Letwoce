@@ -10,7 +10,7 @@ namespace Lettuce.Pages;
 
 public class AdminModel(PgContext pg) : PageModel
 {
-    public Pawn[] Pawns { get; set; }
+    public Pawn[] Pawns { get; set; } = null!;
     public Pawn? OwnPawn { get; set; }
     public bool IsPlayer => OwnPawn != null;
     

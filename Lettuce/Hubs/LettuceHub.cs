@@ -403,6 +403,6 @@ public record EventDto
 {
     public DateTimeOffset Timestamp;
     public Guid Id;
-    public string EventText;
+    public required string EventText;
     public ActionType ActionType;
 }

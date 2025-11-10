@@ -2,6 +2,6 @@
 
 public class DiscordSettings
 {
-    public string ClientId { get; set; }
-    public string ClientSecret { get; set; }
+    public string ClientId { get; set; } = null!;
+    public string ClientSecret { get; set; } = null!;
 }
