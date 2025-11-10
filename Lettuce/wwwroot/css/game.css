@@ -146,6 +146,7 @@ body {
 .aviebox .units, #tooltip #hoveredunits {
     display: flex;
     gap: .5em;
+    align-items: center;
 }
 .aviebox .units .lettuce, #tooltip .lettuce {
     display: flex;
