@@ -70,9 +70,8 @@ public class Program
                 options.LoginPath = "/login";
                 options.LogoutPath = "/logout";
                 options.ExpireTimeSpan = TimeSpan.FromHours(48);
+                options.AccessDeniedPath = "/403";
                 options.Cookie.MaxAge = TimeSpan.FromDays(30);
-                options.Cookie.HttpOnly = true;
-                options.Cookie.SameSite = SameSiteMode.Strict;
                 options.SlidingExpiration = true;
             });
 

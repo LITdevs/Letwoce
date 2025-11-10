@@ -3,6 +3,7 @@ using System.Security.Claims;
 using Lettuce.Database;
 using Lettuce.Database.Models;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using OpenIddict.Abstractions;
@@ -50,7 +51,7 @@ public class AuthController(ILogger<AuthController> logger, PgContext pg) : Cont
         }
 
         // Build an identity based on the external claims and that will be used to create the authentication cookie.
-        var identity = new ClaimsIdentity(authenticationType: "ExternalLogin");
+        var identity = new ClaimsIdentity(authenticationType: CookieAuthenticationDefaults.AuthenticationScheme);
 
         // By default, OpenIddict will automatically try to map the email/name and name identifier claims from
         // their standard OpenID Connect or provider-specific equivalent, if available. If needed, additional
@@ -70,7 +71,9 @@ public class AuthController(ILogger<AuthController> logger, PgContext pg) : Cont
         if (result.Properties?.RedirectUri == "/") result.Properties.RedirectUri = "/game";
         var properties = new AuthenticationProperties(result.Properties?.Items ?? new Dictionary<string, string?>())
         {
-            RedirectUri = result.Properties?.RedirectUri ?? "/game"
+            RedirectUri = result.Properties?.RedirectUri ?? "/game",
+            IsPersistent = true,
+            AllowRefresh = true
         };
 
         // If needed, the tokens returned by the authorization server can be stored in the authentication cookie.
@@ -124,7 +127,10 @@ public class AuthController(ILogger<AuthController> logger, PgContext pg) : Cont
 
         identity.SetClaim("pawnId", pawn.Id.ToString());
         await pg.SaveChangesAsync();
+
+        await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(identity), properties);
         
-        return SignIn(new ClaimsPrincipal(identity), properties);
+        return LocalRedirect(properties.RedirectUri);
+        // return SignIn(new ClaimsPrincipal(identity), properties);
     }
 }
