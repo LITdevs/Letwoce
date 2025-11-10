@@ -82,6 +82,7 @@
 
 
         window.lettuce.pawnTexture = await PIXI.Assets.load("/assets/pawn.png");
+        window.lettuce.deadPawnTexture = await PIXI.Assets.load("/assets/pawn_dead.png");
         window.lettuce.pawnSprites = {};
 
         const app = new PIXI.Application();
@@ -158,7 +159,7 @@
 
 
         window.lettuce.pawns.forEach(pawn => {
-            const sprite = viewport.addChild(new PIXI.Sprite(window.lettuce.pawnTexture));
+            const sprite = viewport.addChild(new PIXI.Sprite(pawn.alive ? window.lettuce.pawnTexture : window.lettuce.deadPawnTexture));
             sprite.anchor.set(0.5);
             let color = pawn.color.name;
             sprite.tint = "0x" + color;
