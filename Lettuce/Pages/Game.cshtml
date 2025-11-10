@@ -272,42 +272,41 @@
     })
     
     connection.on("MoveTo", (pawnId, x, y, actions) => {
-        console.log(pawnId, x, y);
-        let pawn = window.lettuce.pawns.find(p => p.id === pawnId);
-        pawn.x = x;
-        pawn.y = y;
-        pawn.actions = actions;
-        moveToTile(window.lettuce.pawnSprites[pawn.id], x, y);
+        updatePawn(pawnId, {x,y,actions});
+        moveToTile(window.lettuce.pawnSprites[pawnId], x, y);
     })
 
     connection.on("Attack", (attackerId, attackedId) => {
         // TODO: Leafy Green this
         console.log(attackerId, attackedId);
         let attacker = window.lettuce.pawns.find(p => p.id === attackerId);
-        attacker.actions -= 1;
         let attacked = window.lettuce.pawns.find(p => p.id === attackedId);
-        attacked.health -= 1;
+        updatePawn(attackerId, {actions:attacker.actions-1});
+        updatePawn(attackedId, {health:attacked.health-1});
         if (attacked.health < 1) {
-            attacked.alive = false;
+            updatePawn(attackedId, {
+                alive: false,
+                killedAt: new Date().getTime(),
+                killedById: attackerId
+            });
+            
             const atkSprite = window.lettuce.pawnSprites[attacked.id];
             if(atkSprite) atkSprite.texture = window.lettuce.deadPawnTexture;
         }
     })
 
     connection.on("Gift", (attackerId, attackedId, amount) => {
-        // TODO: Leafy Green this
-        console.log(attackerId, attackedId, amount);
         let attacker = window.lettuce.pawns.find(p => p.id === attackerId);
-        attacker.actions -= amount;
         let attacked = window.lettuce.pawns.find(p => p.id === attackedId);
-        attacked.actions += amount;
+        updatePawn(attackerId, {actions:attacker.actions-amount})
+        updatePawn(attackedId, {actions:attacked.actions+amount})
     })
     
     connection.on("LettuceDrop", (amount) => {
         console.log("Drop", amount);
         window.lettuce.pawns.forEach(pawn => {
             if (pawn.id === "ffffffff-ffff-ffff-ffff-ffffffffffff") return;
-            pawn.actions += amount;
+            updatePawn(pawn.id, {actions: pawn.actions+amount});
         })
     })
     
@@ -414,6 +413,16 @@
             resetTooltip();
         };
         return action;
+    }
+    function updatePawn(id, data) {
+        const pawn = window.lettuce.pawns.find(pawn=>pawn.id===id);
+        if(!pawn) return;
+        
+        Object.assign(pawn, data);
+        document.querySelector(`#playerspanel [player="${id}"]`).querySelector(".units").innerHTML = pawn.alive ? unitStamp(pawn) : deathStamp(pawn);
+        if(id === MY_UUID) document.querySelector(`#stats .units`).innerHTML = pawn.alive ? unitStamp(pawn) : deathStamp(pawn);
+        
+        // TODO: change pawn sprite too
     }
     
     // "im doing [something] in such a sketchy way", emilia tells me, while i'm writing my own sketchy code. sketchiness forever!!
