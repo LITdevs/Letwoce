@@ -141,7 +141,11 @@
                     if(distance <= 7.5) tooltip.element.querySelector("#actions").appendChild(mkAction("hand-holding-heart", "Gift lettuce", () => gift(pawn.id)))
                 }
             } else if(myPawn) {
-                tooltip.element.querySelector("#actions").appendChild(mkAction("volume", "It's me!", () => new Audio("/sfx/itsme.wav").play()));
+                tooltip.element.querySelector("#actions").appendChild(mkAction("volume", "It's me!", () => {
+                    let audio = new Audio("/sfx/itsme.wav");
+                    audio.volume = 0.1;
+                    audio.play();
+                }));
                 tooltip.element.querySelector("#actions").appendChild(mkAction("messages", "Chat...", () => connection.invoke("Speak", prompt("What're you gonna say?"))));
             } else if(@(Model.IsPlayer ? "false" : "true")) {
                 tooltip.element.querySelector("#actions").appendChild(mkAction("right-to-bracket", "Log in", () => location.pathname = "/login"));
