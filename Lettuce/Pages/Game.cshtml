@@ -62,6 +62,13 @@
 <script>
     window.lettuce = {};
     window.lettuce.isConnected = false;
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get("disableUi")) {
+        document.getElementById("stats").remove();
+        document.getElementById("connection-indicator").remove();
+        document.querySelector("header").remove();
+        document.getElementById("pixi").style.height = "100vh";
+    }
     let statusTimeout;
     let connection = new signalR.HubConnectionBuilder()
         .withUrl("/lettuceHub")
@@ -92,6 +99,8 @@
             screenWidth: document.getElementById("pixi").clientWidth, screenHeight: document.getElementById("pixi").clientHeight,
             worldWidth: TILE_SIZE*GRID_WIDTH, worldHeight: TILE_SIZE*GRID_HEIGHT, events: app.renderer.events
         }); viewport.drag().pinch().wheel().decelerate().clampZoom({minScale:0.2, maxScale:3})
+        viewport.sortableChildren = true;
+        window.lettuce.viewport = viewport;
         window.addEventListener("resize", () => {
             viewport.resize(document.getElementById("pixi").clientWidth, document.getElementById("pixi").clientHeight); 
         })
@@ -168,6 +177,7 @@
         window.lettuce.pawns.forEach(pawn => {
             const sprite = viewport.addChild(new PIXI.Sprite(pawn.alive ? window.lettuce.pawnTexture : window.lettuce.deadPawnTexture));
             sprite.anchor.set(0.5);
+            sprite.zIndex = 99;
             let color = pawn.color.name;
             sprite.tint = "0x" + color;
             sprite.width = sprite.height = PAWN_SIZE;
@@ -176,38 +186,42 @@
             moveToTile(sprite, pawn.x, pawn.y, false)
             window.lettuce.pawnSprites[pawn.id] = sprite;
         })
-
+        window.lettuce.initialLoadDone = true;
         app.ticker.add(() => {})
     }).catch(function (err) {
         return console.error(err.toString());
     });
     
     function showConnectionStatus(status) {
-        if (statusTimeout) clearTimeout(statusTimeout)
-        switch (status) {
-            case "disconnected":
-                document.getElementById("connection-indicator").style.display = "unset";
-                document.getElementById("connection-indicator-connected").style.display = "none";
-                document.getElementById("connection-indicator-disconnected").style.display = "unset";
-                document.getElementById("connection-indicator-connecting").style.display = "none";
-                break;
-            case "connected":
-                document.getElementById("connection-indicator").style.display = "unset";
-                document.getElementById("connection-indicator-connected").style.display = "unset";
-                document.getElementById("connection-indicator-disconnected").style.display = "none";
-                document.getElementById("connection-indicator-connecting").style.display = "none";
-                break;
-            case "connecting":
-                document.getElementById("connection-indicator").style.display = "unset";
-                document.getElementById("connection-indicator-connected").style.display = "none";
-                document.getElementById("connection-indicator-disconnected").style.display = "none";
-                document.getElementById("connection-indicator-connecting").style.display = "unset";
-                break;
-            default:
-                document.getElementById("connection-indicator").style.display = "none";
-                document.getElementById("connection-indicator-connected").style.display = "none";
-                document.getElementById("connection-indicator-disconnected").style.display = "none";
-                document.getElementById("connection-indicator-connecting").style.display = "none";
+        try {
+            if (statusTimeout) clearTimeout(statusTimeout)
+            switch (status) {
+                case "disconnected":
+                    document.getElementById("connection-indicator").style.display = "unset";
+                    document.getElementById("connection-indicator-connected").style.display = "none";
+                    document.getElementById("connection-indicator-disconnected").style.display = "unset";
+                    document.getElementById("connection-indicator-connecting").style.display = "none";
+                    break;
+                case "connected":
+                    document.getElementById("connection-indicator").style.display = "unset";
+                    document.getElementById("connection-indicator-connected").style.display = "unset";
+                    document.getElementById("connection-indicator-disconnected").style.display = "none";
+                    document.getElementById("connection-indicator-connecting").style.display = "none";
+                    break;
+                case "connecting":
+                    document.getElementById("connection-indicator").style.display = "unset";
+                    document.getElementById("connection-indicator-connected").style.display = "none";
+                    document.getElementById("connection-indicator-disconnected").style.display = "none";
+                    document.getElementById("connection-indicator-connecting").style.display = "unset";
+                    break;
+                default:
+                    document.getElementById("connection-indicator").style.display = "none";
+                    document.getElementById("connection-indicator-connected").style.display = "none";
+                    document.getElementById("connection-indicator-disconnected").style.display = "none";
+                    document.getElementById("connection-indicator-connecting").style.display = "none";
+            }
+        } catch (e) {
+            console.error(e);
         }
     }
     
@@ -297,8 +311,9 @@
     }
     
     // Leafy Green
-    
+
     const posToTile = (pos) => ({x:Math.floor(pos.x/TILE_SIZE),y:Math.floor(pos.y/TILE_SIZE)});
+    const tileToPos = (tile) => ({x: tile.x * TILE_SIZE + TILE_SIZE / 2,y: tile.y * TILE_SIZE + TILE_SIZE / 2});
     const isDiffTile = (tile1,tile2) => tile1.x !== tile2.x || tile1.y !== tile2.y;
     const tileDistance = (tile1, tile2=window.lettuce.pawns.find(pawn=>pawn.id===MY_UUID)) => {
         // from lettuce1
@@ -359,6 +374,44 @@
             turtle.moveTo(TILE_SIZE*i,0).lineTo(TILE_SIZE*i, TILE_SIZE*GRID_HEIGHT).stroke({width: width});
         }
         turtle.rect(0,0,TILE_SIZE*GRID_WIDTH,TILE_SIZE*GRID_HEIGHT).stroke({width: width})
+        
+        let arrowFrom = urlParams.get('arrowFrom');
+        let arrowTo = urlParams.get('arrowTo');
+        if (arrowFrom && arrowTo) {
+            turtle.zIndex = 100;
+            let fromX = Number(arrowFrom.split(",")[0])
+            let fromY = Number(arrowFrom.split(",")[1])
+            let toX = Number(arrowTo.split(",")[0])
+            let toY = Number(arrowTo.split(",")[1])
+            let fromPos = tileToPos({x: fromX, y: fromY})
+            let toPos = tileToPos({x: toX, y: toY});
+            turtle.moveTo(fromPos.x, fromPos.y)
+                .lineTo(toPos.x, toPos.y)
+                .stroke({ color: 0xff0000, width: 3 })
+            // ---- Draw arrow head ----
+            const arrowSize = 30;      // length of arrow head lines
+            const angle = Math.atan2(toPos.y - fromPos.y, toPos.x - fromPos.x);
+
+            // Two points for arrow head
+            const leftAngle = angle + Math.PI / 6;   // 30° spread
+            const rightAngle = angle - Math.PI / 6;
+
+            const leftX = toPos.x - Math.cos(leftAngle) * arrowSize;
+            const leftY = toPos.y - Math.sin(leftAngle) * arrowSize;
+
+            const rightX = toPos.x - Math.cos(rightAngle) * arrowSize;
+            const rightY = toPos.y - Math.sin(rightAngle) * arrowSize;
+
+            turtle.moveTo(toPos.x, toPos.y)
+                .lineTo(leftX, leftY)
+                .moveTo(toPos.x, toPos.y)
+                .lineTo(rightX, rightY)
+                .stroke({ color: 0xff0000, width: 3 })
+            
+            window.lettuce.viewport.moveCenter((fromPos.x + toPos.x) / 2, (fromPos.y + toPos.y) / 2);
+            window.lettuce.viewport.setZoom(0.5, true);
+            //turtle.zIndex = -1;
+        }
     }
     
     function resetTooltip(tooltip = window.lettuce.tooltip) {

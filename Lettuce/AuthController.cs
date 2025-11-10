@@ -9,6 +9,7 @@ using Microsoft.EntityFrameworkCore;
 using OpenIddict.Abstractions;
 using OpenIddict.Client.AspNetCore;
 using OpenIddict.Client.WebIntegration;
+using PuppeteerSharp;
 
 namespace Lettuce;
 
@@ -31,6 +32,31 @@ public class AuthController(ILogger<AuthController> logger, PgContext pg) : Cont
     {
         await HttpContext.SignOutAsync();
         return Redirect("/");
+    }
+
+    [HttpGet("~/Preview")]
+    public async Task<IActionResult> Preview([FromQuery] string arrowFrom, [FromQuery] string arrowTo)
+    {
+        await new BrowserFetcher().DownloadAsync();
+
+        using var browser = await Puppeteer.LaunchAsync(new LaunchOptions
+        {
+            Headless = true,
+            DefaultViewport = new ViewPortOptions()
+            {
+                Height = 1000,
+                Width = 1000,
+                IsMobile = true
+            }
+        });
+        
+        using var page = await browser.NewPageAsync();
+        
+        await page.GoToAsync($"https://lettuce2dev.litdevs.org/game?arrowFrom={arrowFrom}&arrowTo={arrowTo}&disableUi=true");
+        
+        await page.WaitForFunctionAsync("() => {return window.lettuce.initialLoadDone === true}");
+
+        return new FileContentResult(await page.ScreenshotDataAsync(), "image/png");
     }
     
     [HttpGet("~/discord-callback"), HttpPost("~/discord-callback"), IgnoreAntiforgeryToken]
