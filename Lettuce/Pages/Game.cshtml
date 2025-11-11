@@ -76,6 +76,7 @@
         document.getElementById("connection-indicator").remove();
         document.querySelector("header").remove();
         document.getElementById("pixi").style.height = "100vh";
+        document.getElementById("game").style.height = "100vh";
     }
     let statusTimeout;
     let connection = new signalR.HubConnectionBuilder()
