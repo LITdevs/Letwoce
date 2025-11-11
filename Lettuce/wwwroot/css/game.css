@@ -60,13 +60,11 @@ body {
     min-height: 100vh;
 }
 
-#pixi {
+#game, #pixi {
     width: 100%;
     height: calc(100vh - 10em);
     overflow: hidden;
     display: flex;
-    justify-content: center;
-    align-items: center;
 }
 #stats {
     display: flex;
@@ -74,7 +72,7 @@ body {
     height: 6em;
     padding: .8em;
 }
-#stats > div, #stats .aviebox {
+#stats > div, #stats .aviebox, #playerspanel .aviebox {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -234,3 +232,20 @@ body {
     border-radius: 5px;
     margin-left: .5em;
 }
+
+#panels > div {
+    background-color: rgb(30,30,30);
+    width: 25em;
+    padding: .5em;
+    gap: .5em;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    max-height: 100%;
+}
+#playerspanel .aviebox {
+    justify-content: left;
+    border-bottom: 2px dashed rgb(109, 109, 109);
+    padding-bottom: .5em;
+}
+.hidden {display: none !important;}
