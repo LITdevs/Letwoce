@@ -67,6 +67,10 @@
                 Y: <input type="number" value="@pawn.Y" id="pawn_@pawn.Id.ToString()_y"/>
                 <button onclick="forceMove('@pawn.Id.ToString()')">Force move (no event)</button>
             </span>
+            <span>
+                Lettuce: <input type="number" value="@pawn.Actions" id="pawn_@pawn.Id.ToString()_lettuce"/>
+                <button onclick="setLettuce('@pawn.Id.ToString()')">Set lettuces</button>
+            </span>
         }
     }
 </ul>
@@ -262,11 +266,17 @@
         await connection.invoke("Reset");
         window.location.reload();
     }
-    
+
     async function forceMove(id) {
         let x = Number(document.getElementById(`pawn_${id}_x`).value);
         let y = Number(document.getElementById(`pawn_${id}_x`).value);
         await connection.invoke("ForceMove", id, x, y);
+        window.location.reload();
+    }
+
+    async function setLettuce(id) {
+        let l = Number(document.getElementById(`pawn_${id}_lettuce`).value);
+        await connection.invoke("SetLettuce", id, l);
         window.location.reload();
     }
     

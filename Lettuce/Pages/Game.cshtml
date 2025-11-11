@@ -382,6 +382,7 @@
         let arrowTo = urlParams.get('arrowTo');
         if (arrowFrom && arrowTo) {
             turtle.zIndex = 100;
+            let arrowThickness = 7;
             let fromX = Number(arrowFrom.split(",")[0])
             let fromY = Number(arrowFrom.split(",")[1])
             let toX = Number(arrowTo.split(",")[0])
@@ -390,13 +391,12 @@
             let toPos = tileToPos({x: toX, y: toY});
             turtle.moveTo(fromPos.x, fromPos.y)
                 .lineTo(toPos.x, toPos.y)
-                .stroke({ color: 0xff0000, width: 3 })
-            // ---- Draw arrow head ----
-            const arrowSize = 30;      // length of arrow head lines
+                .stroke({ color: 0xff0000, width: arrowThickness })
+            const arrowSize = 45; // length of arrow head lines
             const angle = Math.atan2(toPos.y - fromPos.y, toPos.x - fromPos.x);
 
             // Two points for arrow head
-            const leftAngle = angle + Math.PI / 6;   // 30° spread
+            const leftAngle = angle + Math.PI / 6; // 30° spread
             const rightAngle = angle - Math.PI / 6;
 
             const leftX = toPos.x - Math.cos(leftAngle) * arrowSize;
@@ -409,7 +409,7 @@
                 .lineTo(leftX, leftY)
                 .moveTo(toPos.x, toPos.y)
                 .lineTo(rightX, rightY)
-                .stroke({ color: 0xff0000, width: 3 })
+                .stroke({ color: 0xff0000, width: arrowThickness })
             
             window.lettuce.viewport.moveCenter((fromPos.x + toPos.x) / 2, (fromPos.y + toPos.y) / 2);
             window.lettuce.viewport.setZoom(0.5, true);

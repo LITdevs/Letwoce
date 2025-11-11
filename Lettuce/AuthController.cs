@@ -42,17 +42,17 @@ public class AuthController(ILogger<AuthController> logger, PgContext pg) : Cont
         using var browser = await Puppeteer.LaunchAsync(new LaunchOptions
         {
             Headless = true,
-            DefaultViewport = new ViewPortOptions()
+            DefaultViewport = new ViewPortOptions
             {
-                Height = 1000,
-                Width = 1000,
+                Height = 800,
+                Width = 800,
                 IsMobile = true
             }
         });
         
         using var page = await browser.NewPageAsync();
         
-        await page.GoToAsync($"https://lettuce2dev.litdevs.org/game?arrowFrom={arrowFrom}&arrowTo={arrowTo}&disableUi=true");
+        await page.GoToAsync($"{Program.BaseUrl}/game?arrowFrom={arrowFrom}&arrowTo={arrowTo}&disableUi=true");
         
         await page.WaitForFunctionAsync("() => {return window.lettuce.initialLoadDone === true}");
 
