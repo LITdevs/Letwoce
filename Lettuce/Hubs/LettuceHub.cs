@@ -424,7 +424,23 @@ public class LettuceHub : Hub
         await pg.SaveChangesAsync();
         return true;
     }
+
     
+    [Authorize]
+    public async Task<bool> SetLettuce(PgContext pg, Guid pawnToMoveId, int lettuce)
+    {
+        var pawnId = Guid.Parse(Context.User!.GetClaim("pawnId")!);
+        var pawn = await pg.Pawns.FirstOrDefaultAsync(p => p.Id == pawnId);
+        if (pawn == null) return false;
+        if (!pawn.IsAdmin) return false;
+
+        var pawnToMove = await pg.Pawns.FirstOrDefaultAsync(p => p.Id == pawnToMoveId);
+        if (pawnToMove == null) return false;
+        pawnToMove.Actions = lettuce;
+        await pg.SaveChangesAsync();
+        return true;
+    }
+
     public async Task<VoteData[]> GetVoteData(VoteService voteSvc)
     {
         return await voteSvc.GetVotes();

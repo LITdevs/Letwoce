@@ -14,6 +14,7 @@ public class Program
 {
     public static int GridWidth = 1;
     public static int GridHeight = 1;
+    public static string BaseUrl = "";
     
     public static async Task Main(string[] args)
     {
@@ -108,6 +109,8 @@ public class Program
                 opt.UseDataProtection();
             });
 
+        BaseUrl = builder.Configuration.GetValue<string>("Lettuce:BaseUrl", "i am invalid");
+        
         builder.Services.AddSingleton<HttpClient>();
         builder.Services.Configure<NotifierSettings>(builder.Configuration.GetSection("Notifier"));
         builder.Services.AddScoped<EventNotifier>();
