@@ -154,6 +154,7 @@ public class AuthController(ILogger<AuthController> logger, PgContext pg) : Cont
         identity.SetClaim("pawnId", pawn.Id.ToString());
         await pg.SaveChangesAsync();
 
+        properties.ExpiresUtc = DateTimeOffset.Now + TimeSpan.FromDays(31);
         await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(identity), properties);
         
         return LocalRedirect(properties.RedirectUri);
