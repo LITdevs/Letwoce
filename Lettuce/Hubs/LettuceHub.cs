@@ -461,8 +461,8 @@ public class LettuceHub : Hub
 
 public record EventDto
 {
-    public DateTimeOffset Timestamp;
-    public Guid Id;
-    public required string EventText;
-    public ActionType ActionType;
+    public DateTimeOffset Timestamp { get; set; }
+    public Guid Id { get; set; }
+    public required string EventText { get; set; }
+    public ActionType ActionType { get; set; }
 }
