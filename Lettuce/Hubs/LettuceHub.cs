@@ -393,10 +393,22 @@ public class LettuceHub : Hub
         
         foreach (var p in pawns)
         {
-            p.X = Random.Shared.Next(0, Program.GridWidth);
-            p.Y = Random.Shared.Next(0, Program.GridHeight);
-            p.Actions = 0;
-            p.Health = 3;
+            if (p.Id != Guid.AllBitsSet)
+            {
+                p.X = Random.Shared.Next(0, Program.GridWidth);
+                p.Y = Random.Shared.Next(0, Program.GridHeight);
+                p.Actions = 0;
+                p.Health = 3;
+                p.Vote = null;
+                p.KilledAt = null;
+                p.KilledById = null;
+                continue;
+            }
+            
+            p.X = -8;
+            p.Y = (int)Math.Floor(Program.GridHeight / 2d);
+            p.Actions = int.MaxValue;
+            p.Health = int.MaxValue;
             p.Vote = null;
             p.KilledAt = null;
             p.KilledById = null;
