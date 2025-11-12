@@ -177,6 +177,7 @@ public class LettuceHub : Hub
         };
         pg.Add(e);
         en.HandleEvent(e);
+        await Clients.All.SendAsync("Attack", pawn.Id, attackedPawn.Id);
         if (!attackedPawn.Alive)
         {
             var e3 = new Event
@@ -212,9 +213,27 @@ public class LettuceHub : Hub
 
             attackedPawn.KilledById = pawn.Id;
             attackedPawn.KilledAt = DateTimeOffset.UtcNow;
+
+            var alivePawns = await pg.Pawns.CountAsync(p => p.Health > 0 && p.Id != Guid.AllBitsSet);
+            logger.LogInformation("Alive pawns: {Alive}", alivePawns);
+            if (alivePawns == 2) // The pawn just killed does not yet show up as dead
+            {
+                logger.LogInformation("winner winner chicken dinner");
+                // damn they won
+                var e4 = new Event
+                {
+                    ActionById = pawn.Id,
+                    ActionToId = pawn.Id,
+                    EventText = $"{pawn.DisplayName} wins the game.",
+                    LettuceCount = 0,
+                    Died = false,
+                    ActionType = ActionType.WinnerWinnerChickenDinner
+                };
+                en.HandleEvent(e4);
+                await Clients.All.SendAsync("Winner", pawn.Id);
+            }
         }
         await pg.SaveChangesAsync();
-        await Clients.All.SendAsync("Attack", pawn.Id, attackedPawn.Id);
 
         return true;
     }

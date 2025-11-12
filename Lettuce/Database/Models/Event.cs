@@ -33,5 +33,6 @@ public enum ActionType
     Attack,
     LettuceDrop,
     Scol,
-    Speak
+    Speak,
+    WinnerWinnerChickenDinner
 }
