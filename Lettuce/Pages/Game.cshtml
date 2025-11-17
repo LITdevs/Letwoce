@@ -100,6 +100,7 @@
         window.lettuce.pawnTexture = await PIXI.Assets.load("/assets/pawn.png");
         window.lettuce.deadPawnTexture = await PIXI.Assets.load("/assets/pawn_dead.png");
         window.lettuce.pawnSprites = {};
+        window.lettuce.pawnBoxes = {};
         
         const app = new PIXI.Application();
         const pixiBox = document.getElementById("pixi");
@@ -190,16 +191,18 @@
 
 
         window.lettuce.pawns.sort((a, b) => a.displayName.localeCompare(b.displayName)).forEach(pawn => {
-            const sprite = viewport.addChild(new PIXI.Sprite(pawn.alive ? window.lettuce.pawnTexture : window.lettuce.deadPawnTexture));
-            sprite.anchor.set(0.5);
-            sprite.zIndex = 99;
-            let color = pawn.color.name;
-            sprite.tint = "0x" + color;
-            sprite.width = sprite.height = PAWN_SIZE;
+            const spriteBox = viewport.addChild(new PIXI.Container());
+            const sprite = spriteBox.addChild(new PIXI.Sprite(pawn.alive ? window.lettuce.pawnTexture : window.lettuce.deadPawnTexture));
+
+            spriteBox.zIndex = 99;
+            sprite.anchor.set(0.5, 0.5);
+            sprite.tint = "0x" + pawn.color.name;
+            sprite.setSize(PAWN_SIZE);
             sprite.eventMode = "static";
             sprite.pawnID = pawn.id;
-            moveToTile(sprite, pawn.x, pawn.y, false)
+            moveToTile(spriteBox, pawn.x, pawn.y, false);
             window.lettuce.pawnSprites[pawn.id] = sprite;
+            window.lettuce.pawnBoxes[pawn.id] = spriteBox;
             
             if(pawn.id === "ffffffff-ffff-ffff-ffff-ffffffffffff") return;
             
@@ -216,6 +219,11 @@
             playerBlock.querySelector(".pfp").src = pawn.avatarUri;
             playerBlock.querySelector(".name").innerText = pawn.displayName;
             document.querySelector("#playerspanel").appendChild(playerBlock);
+
+            if(pawn.id !== MY_UUID) return;
+            const spriteTurtle = spriteBox.addChild(new PIXI.Graphics());
+            spriteTurtle.circle(0, 0, TILE_SIZE*4).stroke({ width: 10, color: 0xff0000 });
+            spriteTurtle.circle(0, 0, TILE_SIZE*7).stroke({ width: 10, color: 0x00ff00 });
         })
         window.lettuce.initialLoadDone = true;
         app.ticker.add(() => {})
@@ -291,7 +299,7 @@
     
     connection.on("MoveTo", (pawnId, x, y, actions) => {
         updatePawn(pawnId, {x,y,actions});
-        moveToTile(window.lettuce.pawnSprites[pawnId], x, y);
+        moveToTile(window.lettuce.pawnBoxes[pawnId], x, y);
     })
 
     connection.on("Attack", (attackerId, attackedId) => {
