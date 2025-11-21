@@ -27,17 +27,17 @@
 
 <div id="stats">
     <div class="aviebox">
-        <img class="pfp" src="@Model.OwnPawn?.AvatarUri" alt="" referrerpolicy="no-referrer">
+        <img class="pfp" src="@(@Model.OwnPawn?.AvatarUri ?? "/assets/pawn.png")" alt="" referrerpolicy="no-referrer">
         <div class="info">
-            <span class="name">@Model.OwnPawn?.DisplayName</span>
+            <span class="name">@(@Model.OwnPawn?.DisplayName ?? "Guest")</span>
             <div class="units">
                 <span class="health">
-                    <i style="" class="fa-solid fa-heart@(Model.OwnPawn?.Health < 1 ? "-crack" : "")"></i>
-                    <i class="fa-solid fa-heart@(Model.OwnPawn?.Health < 2 ? "-crack" : "")"></i>
-                    <i class="fa-solid fa-heart@(Model.OwnPawn?.Health < 3 ? "-crack" : "")"></i>
+                    <i style="" class="fa-solid fa-heart@(Model.OwnPawn == null || Model.OwnPawn?.Health < 1 ? "-crack" : "")"></i>
+                    <i class="fa-solid fa-heart@(Model.OwnPawn == null || Model.OwnPawn?.Health < 2 ? "-crack" : "")"></i>
+                    <i class="fa-solid fa-heart@(Model.OwnPawn == null || Model.OwnPawn?.Health < 3 ? "-crack" : "")"></i>
                 </span>
                 <span class="lettuce">
-                    <img src="/assets/lettuce.png" alt=""> <span class="lettucecount">@Model.OwnPawn?.Actions</span>
+                    <img src="/assets/lettuce.png" alt=""> <span class="lettucecount">@(@Model.OwnPawn?.Actions.ToString() ?? "N/A")</span>
                 </span>
             </div>
         </div>
