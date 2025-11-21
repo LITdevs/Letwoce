@@ -14,13 +14,7 @@
     <div id="pixi"></div>
     <div id="panels">
         <div id="playerspanel" class="hidden"></div>
-        <div id="eventspanel" class="hidden">
-            <div class="event">
-                <img src="/assets/pawn.png"/>
-                <span>Nia exploded at 23/11/2025 19:05:22</span>
-                <img src="/assets/pawn.png"/>
-            </div>
-        </div>
+        <div id="eventspanel" class="hidden"></div>
     </div>
 </div>
 
@@ -153,7 +147,8 @@
     
     showConnectionStatus("connecting")
     connection.start().then(async function () {
-        onConnect(false)
+        onConnect(false);
+        
         window.lettuce.pawns = await connection.invoke("GetPawns");
         console.log(window.lettuce.pawns);
         
@@ -183,7 +178,10 @@
             app.resize(pixiBox.clientWidth, pixiBox.clientHeight);
             viewport.resize(pixiBox.clientWidth, pixiBox.clientHeight);
         }
-        window.addEventListener("resize", window.lettuce.resizeViewport)
+        window.addEventListener("resize", window.lettuce.resizeViewport);
+
+        (await connection.invoke("GetEvents")).reverse().forEach(mkEvent);
+        if(!matchMedia("(max-width: 60em)").matches) panelSwap("events");
 
         const turtle = new PIXI.Graphics();
         const tooltip = new PIXI.DOMContainer();
@@ -564,6 +562,20 @@
         };
         return action;
     }
+    function mkEvent(event) {
+        const eventBlock = document.createElement("div");
+        eventBlock.classList.add("event");
+        eventBlock.innerHTML = `<img src="/assets/pawn.png"/><span></span><img src="/assets/pawn.png"/>`;      
+        eventBlock.querySelector("span").innerText = event.eventText + ` at ${new Date(event.timestamp).toLocaleString()}`;
+        
+        if(event.actionType === 0) {
+            eventBlock.querySelectorAll("img").forEach(i=>i.remove())
+            eventBlock.classList.add("slim");
+        }
+        
+        eventspanel.prepend(eventBlock);
+    }
+    
     function updatePawn(id, data) {
         const pawn = window.lettuce.pawns.find(pawn=>pawn.id===id);
         if(!pawn) return;

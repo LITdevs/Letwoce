@@ -301,6 +301,11 @@ main {
     justify-content: space-between;
     overflow: hidden;
     background: rgb(62, 62, 62);
+    margin-bottom: .5em;
+    text-align: center;
+}
+.event.slim {
+    justify-content: center;
 }
 .event img {
     height: 4em;
