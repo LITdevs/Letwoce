@@ -184,6 +184,7 @@
         gameEvents.reverse().forEach(mkEvent);
         if(gameEvents.length === 50) eventspanel.innerHTML += "<span>Can't load more than that, sorry! :3<br/><br/></span>";
         if(!matchMedia("(max-width: 60em)").matches) panelSwap("events");
+        
 
         const turtle = new PIXI.Graphics();
         const tooltip = new PIXI.DOMContainer();
@@ -202,6 +203,9 @@
             drawGrid(turtle, GRID_LINEWIDTH/viewport.scale.x)
             tooltip.scale = 1/viewport.scale.x;
         })
+        viewport.setZoom(0.3);
+        viewport.moveCenter(TILE_SIZE*GRID_WIDTH/2,TILE_SIZE*GRID_HEIGHT/2);
+        viewport.emit("zoomed");
 
         let dragging = false;
         viewport.on('mousemove', (event) => {
