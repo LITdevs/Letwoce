@@ -66,6 +66,7 @@
     const TILE_PADDING = 10;
     const TILE_SIZE = PAWN_SIZE+TILE_PADDING;
     const GRID_LINEWIDTH = 2;
+    const RANGE_LINEWIDTH = 10;
     const sleep = ms => new Promise(r => setTimeout(r, ms));
 </script>
 <script src="/js/pixi/pixi.min.js" asp-append-version="true"></script>
@@ -129,14 +130,16 @@
     }
     function togglePawnRange(pawnId, makeVisible) {
         if(!window.lettuce.pawns.find(p=>p.id===pawnId).alive) return;
-        const targetCircle = pawnId === MY_UUID ? window.lettuce.myCircle : window.lettuce.otherCircles[pawnId]; 
+        const targetCircle = pawnId === MY_UUID ? window.lettuce.myCircle : window.lettuce.otherCircles[pawnId];
+        const pos = window.lettuce.pawnBoxes[pawnId].position;
+        const mkThistip = () => mkTooltip(posToTile(pos), window.lettuce.pawns.find(p=>p.id===pawnId), pos);
         
         if(window.lettuce.superShitRangeMode) {
             if(makeVisible) {
                 // focus on the player
                 if(MY_UUID) window.lettuce.myCircle.visible = false;
                 Object.values(window.lettuce.otherCircles).forEach(c => c.visible = false);
-                targetCircle.visible = true;
+                targetCircle.visible = true; mkThistip();
             } else {
                 // flick everything back on ( GOD end me already )
                 if (MY_UUID && window.lettuce.pawns.find(p=>p.id===MY_UUID).alive) window.lettuce.myCircle.visible = true;
@@ -144,7 +147,7 @@
             }
         } else {
             if(pawnId === MY_UUID && window.lettuce.rangeDisplay) return;
-            targetCircle.visible = makeVisible;
+            targetCircle.visible = makeVisible; mkThistip();
         }
     }
     
@@ -174,7 +177,7 @@
         const viewport = new pixi_viewport.Viewport({
             screenWidth: pixiBox.clientWidth, screenHeight: pixiBox.clientHeight,
             worldWidth: TILE_SIZE*GRID_WIDTH, worldHeight: TILE_SIZE*GRID_HEIGHT, events: app.renderer.events
-        }); viewport.drag().pinch().wheel().decelerate().clampZoom({minScale:0.2, maxScale:3})
+        }); viewport.drag().pinch().wheel().decelerate().clampZoom({minScale:0.3, maxScale:3})
         window.lettuce.viewport = viewport;
         window.lettuce.resizeViewport = () => {
             app.resize(pixiBox.clientWidth, pixiBox.clientHeight);
@@ -274,8 +277,9 @@
             const playerBlock = document.createElement("div");
             playerBlock.classList.add("aviebox");
             playerBlock.setAttribute("player", pawn.id)
-            playerBlock.onpointerenter = () => togglePawnRange(pawn.id, true);
-            playerBlock.onpointerleave = () => togglePawnRange(pawn.id, false);
+            playerBlock.onmouseenter = () => togglePawnRange(pawn.id, true);
+            playerBlock.onmouseleave = () => togglePawnRange(pawn.id, false);
+            playerBlock.onclick = () => jumpToPawn(pawn.id);
             playerBlock.innerHTML = `
                 <img class="pfp" alt="" referrerpolicy="no-referrer">
                 <div class="info">
@@ -288,8 +292,8 @@
             document.querySelector("#playerspanel").appendChild(playerBlock);
 
             const spriteTurtle = spriteBox.addChild(new PIXI.Graphics());
-            spriteTurtle.circle(0, 0, TILE_SIZE*4).stroke({ width: 10, color: 0xff0000 });
-            spriteTurtle.circle(0, 0, TILE_SIZE*7).stroke({ width: 10, color: 0x00ff00 });
+            spriteTurtle.circle(0, 0, TILE_SIZE*4).stroke({ width: RANGE_LINEWIDTH, color: 0xff0000 });
+            spriteTurtle.circle(0, 0, TILE_SIZE*7).stroke({ width: RANGE_LINEWIDTH, color: 0x00ff00 });
             if(pawn.id !== MY_UUID && !window.lettuce.superShitRangeMode) spriteTurtle.visible = false;
             if(!window.lettuce.rangeDisplay && !window.lettuce.superShitRangeMode) spriteTurtle.visible = false;
             if(!pawn.alive) spriteTurtle.visible = false;
@@ -448,7 +452,14 @@
                     <img src="/assets/lettuce.png" alt=""> <span class="lettucecount">${pawn.actions}</span>
                 </span>`
     }
-    
+
+    const jumpToPawn = (pawnId) => {
+        if(matchMedia("(max-width: 60em)").matches) panelSwap("players");
+        
+        const pos = window.lettuce.pawnBoxes[pawnId].position
+        window.lettuce.viewport.moveCenter(pos);
+        mkTooltip(posToTile(pos), window.lettuce.pawns.find(p=>p.id===pawnId), pos);
+    }
     const moveToTile = async (sprite, tx, ty, animate = true) => {
         const sx = tx * TILE_SIZE + TILE_SIZE / 2; const sy = ty * TILE_SIZE + TILE_SIZE / 2;
         return animate ? move(sprite, tx * TILE_SIZE + TILE_SIZE / 2, ty * TILE_SIZE + TILE_SIZE / 2) : sprite.position.set(sx,sy);

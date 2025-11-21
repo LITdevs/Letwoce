@@ -292,6 +292,9 @@ main {
     }
 }
 
+#playerspanel .aviebox {
+    cursor: pointer;
+}
 .event {
     display: flex;
     align-items: center;
