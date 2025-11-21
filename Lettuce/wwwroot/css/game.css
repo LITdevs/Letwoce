@@ -291,3 +291,20 @@ main {
         font-size: 1.4em;
     }
 }
+
+.event {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    overflow: hidden;
+    background: rgb(62, 62, 62);
+}
+.event img {
+    height: 4em;
+}
+.event img:first-child {
+    transform: translateX(-1em);
+ }
+.event img:last-child {
+    transform: scaleX(-1) translateX(-1em);
+}
