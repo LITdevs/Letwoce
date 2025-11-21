@@ -180,7 +180,9 @@
         }
         window.addEventListener("resize", window.lettuce.resizeViewport);
 
-        (await connection.invoke("GetEvents")).reverse().forEach(mkEvent);
+        const gameEvents = await connection.invoke("GetEvents");
+        gameEvents.reverse().forEach(mkEvent);
+        if(gameEvents.length === 50) eventspanel.innerHTML += "<span>Can't load more than that, sorry! :3<br/><br/></span>";
         if(!matchMedia("(max-width: 60em)").matches) panelSwap("events");
 
         const turtle = new PIXI.Graphics();
@@ -563,17 +565,28 @@
         return action;
     }
     function mkEvent(event) {
+        const eventTime = new Date(event.timestamp);
+        const wrapper = document.querySelector(`#eventspanel details[date="${eventTime.toLocaleDateString()}"]`) ?? mkEventWrap(eventTime);
+        
         const eventBlock = document.createElement("div");
         eventBlock.classList.add("event");
         eventBlock.innerHTML = `<img src="/assets/pawn.png"/><span></span><img src="/assets/pawn.png"/>`;      
-        eventBlock.querySelector("span").innerText = event.eventText + ` at ${new Date(event.timestamp).toLocaleString()}`;
+        eventBlock.querySelector("span").innerText = event.eventText + ` at ${new Date(event.timestamp).toLocaleTimeString()}`;
         
         if(event.actionType === 0) {
             eventBlock.querySelectorAll("img").forEach(i=>i.remove())
             eventBlock.classList.add("slim");
         }
         
-        eventspanel.prepend(eventBlock);
+        wrapper.prepend(eventBlock);
+    }
+    function mkEventWrap(time) {
+        const eventWrap = document.createElement("details");
+        eventWrap.open = true;
+        eventWrap.setAttribute("date", time.toLocaleDateString());
+        eventWrap.innerHTML = `<summary>${time.toLocaleDateString()}</summary>`;
+        eventspanel.prepend(eventWrap);
+        return eventWrap;
     }
     
     function updatePawn(id, data) {

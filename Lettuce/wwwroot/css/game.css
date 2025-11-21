@@ -295,6 +295,10 @@ main {
 #playerspanel .aviebox {
     cursor: pointer;
 }
+#eventspanel details summary {
+    cursor: pointer;
+    margin-bottom: .5em;
+}
 .event {
     display: flex;
     align-items: center;
