@@ -42,7 +42,7 @@
         <div class="tabs">
             <button onclick="panelSwap('players')"><img src="/assets/pawn.png"> players</button>
             <button onclick="panelSwap('events')"><img src="/assets/pawn_dead.png"> events</button>
-            <button><i class="fa-solid fa-crosshairs" style="color: red"></i> ranges</button>
+            <button onclick="toggleRange()" ><i class="fa-solid fa-crosshairs" style="color: red"></i> ranges</button>
         </div>
         <span id="pcount">? fighter online</span>
     </div>
@@ -70,6 +70,15 @@
 <script>
     window.lettuce = {};
     window.lettuce.isConnected = false;
+    window.lettuce.rangeDisplay = localStorage.getItem("rangeDisplay") === "true";
+    window.lettuce.superShitRangeMode = localStorage.getItem("superShitRangeMode") === "true";
+    if (localStorage.getItem("rangeDisplay") == null) {
+        console.log("Set default range mode");
+        window.lettuce.superShitRangeMode = false;
+        window.lettuce.rangeDisplay = true;
+        localStorage.setItem("superShitRangeMode", "false");
+        localStorage.setItem("rangeDisplay", "true");
+    }
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get("disableUi")) {
         document.getElementById("stats").remove();
@@ -84,6 +93,40 @@
         .withAutomaticReconnect()
         .build();
 
+    function toggleRange() {
+        // 90% of this function is useless, i added window.lettuce.superShitRangeMode and rangeDisplay before realizing i cant do anything with those
+        // but i wont remove it :)
+        // hi me 5 minutes later, actually im not sure this would work without the all the the thing the thing the all the stuff 
+        if (window.lettuce.superShitRangeMode) {
+            window.lettuce.superShitRangeMode = false;
+            window.lettuce.rangeDisplay = false;
+            localStorage.setItem("superShitRangeMode", "false");
+            localStorage.setItem("rangeDisplay", "false");
+            
+            if (MY_UUID !== "") window.lettuce.myCircle.visible = false;
+            window.lettuce.otherCircles.forEach(c => c.visible = false);
+            return;
+        }
+        if (window.lettuce.rangeDisplay) {
+            window.lettuce.superShitRangeMode = true;
+            window.lettuce.rangeDisplay = false;
+            localStorage.setItem("superShitRangeMode", "true");
+            localStorage.setItem("rangeDisplay", "false");
+
+            if (MY_UUID !== "") window.lettuce.myCircle.visible = true;
+            window.lettuce.otherCircles.forEach(c => c.visible = true);
+            return;
+        }
+
+        window.lettuce.superShitRangeMode = false;
+        window.lettuce.rangeDisplay = true;
+        localStorage.setItem("superShitRangeMode", "false");
+        localStorage.setItem("rangeDisplay", "true");
+
+        if (MY_UUID !== "") window.lettuce.myCircle.visible = true;
+        window.lettuce.otherCircles.forEach(c => c.visible = false);
+    }
+    
     showConnectionStatus("connecting")
     connection.start().then(async function () {
         onConnect(false)
@@ -103,6 +146,7 @@
         window.lettuce.pawnBoxes = {};
         
         const app = new PIXI.Application();
+        window.lettuce.pixiApp = app;
         const pixiBox = document.getElementById("pixi");
         await app.init({background: "rgb(46,46,46)", resizeTo: pixiBox});
 
@@ -189,7 +233,7 @@
         app.stage.addChild(viewport);
         document.getElementById("pixi").appendChild(app.canvas);
 
-
+        window.lettuce.otherCircles = [];
         window.lettuce.pawns.sort((a, b) => a.displayName.localeCompare(b.displayName)).forEach(pawn => {
             const spriteBox = viewport.addChild(new PIXI.Container());
             const sprite = spriteBox.addChild(new PIXI.Sprite(pawn.alive ? window.lettuce.pawnTexture : window.lettuce.deadPawnTexture));
@@ -220,10 +264,16 @@
             playerBlock.querySelector(".name").innerText = pawn.displayName;
             document.querySelector("#playerspanel").appendChild(playerBlock);
 
-            if(pawn.id !== MY_UUID) return;
             const spriteTurtle = spriteBox.addChild(new PIXI.Graphics());
             spriteTurtle.circle(0, 0, TILE_SIZE*4).stroke({ width: 10, color: 0xff0000 });
             spriteTurtle.circle(0, 0, TILE_SIZE*7).stroke({ width: 10, color: 0x00ff00 });
+            if(pawn.id !== MY_UUID && !window.lettuce.superShitRangeMode) spriteTurtle.visible = false;
+            if (!window.lettuce.rangeDisplay && !window.lettuce.superShitRangeMode) spriteTurtle.visible = false;
+            if (pawn.id === MY_UUID) {
+                window.lettuce.myCircle = spriteTurtle;
+            } else {
+                window.lettuce.otherCircles.push(spriteTurtle);
+            }
         })
         window.lettuce.initialLoadDone = true;
         app.ticker.add(() => {})
