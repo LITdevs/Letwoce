@@ -136,7 +136,7 @@
         })
 
         let dragging = false;
-        viewport.on('pointermove', (event) => {
+        viewport.on('mousemove', (event) => {
             const pos = viewport.toWorld(event.global);
             const tile = posToTile(pos);
             const pawn = window.lettuce.pawns.find(pawn => pawn.x === tile.x && pawn.y === tile.y);
@@ -494,10 +494,14 @@
     function panelSwap(panel) {
         const wantedPanel = document.querySelector(`#panels #${panel}panel`);
         if(!wantedPanel.classList.contains('hidden')) {
-            document.querySelectorAll("#panels > div").forEach((panel) => panel.classList.add("hidden"))
+            wantedPanel.classList.add("hidden");
+            game.removeAttribute("active-panel");
         } else {
-            document.querySelectorAll(`#panels > div:not(#${panel}panel)`).forEach((panel) => panel.classList.add("hidden"))
+            const currentPanel = document.querySelector(`#panels #${game.getAttribute("active-panel")}panel`);
+            if(currentPanel) currentPanel.classList.add("hidden");
             wantedPanel.classList.remove("hidden");
+            
+            game.setAttribute("active-panel", panel)
         }
         window.lettuce.resizeViewport();
     }

@@ -42,14 +42,9 @@
     }
 }
 
-.container {
-    height: 100%
-}
-
 
 html {
     position: relative;
-    min-height: 100%;
 }
 
 body {
@@ -57,12 +52,19 @@ body {
     margin: 0;
     display: flex;
     flex-direction: column;
-    min-height: 100vh;
 }
 
+html, body, main {
+    height: 100%;
+}
+
+main {
+    display: flex;
+    flex-direction: column;
+}
 #game, #pixi {
     width: 100%;
-    height: calc(100vh - 10em);
+    flex-grow: 1;
     overflow: hidden;
     display: flex;
 }
@@ -70,7 +72,7 @@ body {
     display: flex;
     justify-content: space-between;
     height: 6em;
-    padding: .8em;
+    padding: 1em;
 }
 #stats > div, #stats .aviebox, #playerspanel .aviebox {
     display: flex;
@@ -249,3 +251,37 @@ body {
     padding-bottom: .5em;
 }
 .hidden {display: none !important;}
+
+@media (max-width: 60em) {
+    #game[active-panel] #pixi {
+        display: none;
+    }
+    #game[active-panel] #panels, #panels > div {
+        width: 100%;
+    }
+}
+@media (max-width: 45em) {
+    #stats {
+        flex-direction: column;
+        gap: 1em;
+    }
+    #stats > div {
+        height: 3em;
+    }
+    #pcount {
+        display: none;
+    }
+    #stats .metas {
+        align-items: center;
+    }
+    #stats .pfp {
+        width: 3em;
+        height: 3em;
+    }
+    #stats .info {
+        font-size: smaller;
+    }
+    #stats .tabs button {
+        font-size: 1.4em;
+    }
+}
