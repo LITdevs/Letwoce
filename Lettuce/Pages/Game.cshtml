@@ -176,7 +176,7 @@
         const viewport = new pixi_viewport.Viewport({
             screenWidth: pixiBox.clientWidth, screenHeight: pixiBox.clientHeight,
             worldWidth: TILE_SIZE*GRID_WIDTH, worldHeight: TILE_SIZE*GRID_HEIGHT, events: app.renderer.events
-        }); viewport.drag().pinch().wheel().decelerate().clampZoom({minScale:0.3, maxScale:3})
+        }); viewport.drag().pinch().wheel().decelerate().clampZoom({minScale:0.2, maxScale:3})
         window.lettuce.viewport = viewport;
         window.lettuce.resizeViewport = () => {
             app.resize(pixiBox.clientWidth, pixiBox.clientHeight);
