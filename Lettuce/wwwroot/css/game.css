@@ -272,7 +272,7 @@ main {
 #playerspanel .aviebox {
     justify-content: left;
     border-bottom: 2px dashed rgb(109, 109, 109);
-    padding-bottom: .5em;
+    padding: .5em 0;
 }
 .hidden {display: none !important;}
 
