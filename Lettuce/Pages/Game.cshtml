@@ -54,7 +54,8 @@
 
 <script>
     const MY_UUID = "@Model.OwnPawn?.Id.ToString()";
-    const FIRST_EVENT_TIME = new Date(@Html.Raw(Model.FirstEventTime.ToUnixTimeMilliseconds()));
+    const FIRST_EVENT_TIME = new Date(@Model.FirstEventTime.ToUnixTimeMilliseconds());
+    const SCOL_VOTE = "@Model.OwnPawn?.Vote";
     const GRID_WIDTH = @Program.GridWidth;
     const GRID_HEIGHT = @Program.GridHeight;
     const PAWN_SIZE = 100;
@@ -237,13 +238,21 @@
             
             if(myPawn && pawn !== myPawn) {
                 const distance = tileDistance(tile);
-                if(!pawn) {
+                if(!myPawn.alive && pawn.alive) {
+                    tooltip.element.querySelector("#actions").appendChild(mkAction("hand-holding-heart", `Vote${pawn.voted?"d":""}`, async () => {
+                        const prevVote = window.lettuce.pawns.find(p=>p.voted===true);
+                        await connection.invoke("Vote", pawn.id) // https://youtu.be/J9udiROQchg?t=430
+                        
+                        if(prevVote) updatePawn(prevVote.id, {voted: false});
+                        updatePawn(pawn.id, {voted: true});
+                    }))
+                } else if(!pawn) {
                     if(distance <= 1.5) tooltip.element.querySelector("#actions").appendChild(mkAction("person-walking", "Move here", () => connection.invoke("MoveTo", tile.x, tile.y)))
                 } else if(pawn.alive) {
-                    if(distance <= 4.25) tooltip.element.querySelector("#actions").appendChild(mkAction("face-angry", "Attack", () => attack(pawn.id)))
-                    if(distance <= 7.5) tooltip.element.querySelector("#actions").appendChild(mkAction("hand-holding-heart", "Gift lettuce", () => gift(pawn.id)))
+                    if(distance <= 4.25) tooltip.element.querySelector("#actions").appendChild(mkAction("face-angry", "Attack", () => connection.invoke("Attack", pawn.id)))
+                    if(distance <= 7.5) tooltip.element.querySelector("#actions").appendChild(mkAction("hand-holding-heart", "Gift lettuce", () => connection.invoke("Gift", pawn.id)))
                 }
-            } else if(myPawn) {
+            } else if(myPawn?.alive) {
                 tooltip.element.querySelector("#actions").appendChild(mkAction("volume", "It's me!", () => {
                     let audio = new Audio("/sfx/itsme.wav");
                     audio.volume = 0.1;
@@ -298,6 +307,7 @@
             window.lettuce.pawnBoxes[pawn.id] = spriteBox;
             
             if(pawn.id === "ffffffff-ffff-ffff-ffff-ffffffffffff") return;
+            if(SCOL_VOTE) pawn.voted = pawn.id === SCOL_VOTE;
 
             if (pawnsAlive === 2 && pawn.alive) {
                 spriteTint.tint = 0xffffff
@@ -311,13 +321,17 @@
             playerBlock.onmouseleave = () => togglePawnRange(pawn.id, false);
             playerBlock.onclick = () => jumpToPawn(pawn.id);
             playerBlock.innerHTML = `
-                <img class="pfp" alt="" referrerpolicy="no-referrer">
+                <div class="pfp stuffed">
+                    <img alt="" referrerpolicy="no-referrer" class="itsme">
+                    <img src="/assets/lettuce.png" alt="Voted" class="voteicon hidden">
+                </div>
                 <div class="info">
                     <span class="name"></span>
                     <div class="units">${pawn.alive ? unitStamp(pawn) : deathStamp(pawn)}</div>
                 </div>
             `
-            playerBlock.querySelector(".pfp").src = pawn.avatarUri;
+            playerBlock.querySelector(".pfp img").src = pawn.avatarUri;
+            playerBlock.querySelector(".pfp .voteicon").classList.toggle("hidden", !pawn.voted);
             playerBlock.querySelector(".name").innerText = pawn.displayName;
             document.querySelector("#playerspanel").appendChild(playerBlock);
 
@@ -430,7 +444,8 @@
             updatePawn(attackedId, {
                 alive: false,
                 killedAt: new Date().getTime(),
-                killedById: attackerId
+                killedById: attackerId,
+                voted: false
             });
 
             const atkSprite = window.lettuce.pawnSprites[attacked.id];
@@ -459,14 +474,6 @@
     
     function updateLiveCount(count) {
         document.getElementById("pcount").innerHTML = `${count} fighter${count !== 1 ? "s" : ""} online`;
-    }
-    
-    async function attack(id) {
-        await connection.invoke("Attack", id);
-    }
-
-    async function gift(id) {
-        await connection.invoke("Gift", id);
     }
     
     // Leafy Green
@@ -658,7 +665,9 @@
         if(!pawn) return;
         
         Object.assign(pawn, data);
+        console.log(pawn.displayName, pawn.voted)
         document.querySelector(`#playerspanel [player="${id}"]`).querySelector(".units").innerHTML = pawn.alive ? unitStamp(pawn) : deathStamp(pawn);
+        document.querySelector(`#playerspanel [player="${id}"]`).querySelector(".pfp .voteicon").classList.toggle("hidden", !pawn.voted);
         if(id === MY_UUID) document.querySelector(`#stats .units`).innerHTML = pawn.alive ? unitStamp(pawn) : deathStamp(pawn);
         
         // TODO: change pawn sprite too
