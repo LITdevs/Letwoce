@@ -119,7 +119,7 @@ public record MoveTrackerData
 {
     public DateTimeOffset LastMove;
     public Guid Id;
-    public string DisplayName;
+    public required string DisplayName;
     public int StartX;
     public int StartY;
     public int EndX;

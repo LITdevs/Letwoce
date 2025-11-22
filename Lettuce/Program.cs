@@ -20,6 +20,8 @@ public class Program
     {
         var builder = WebApplication.CreateBuilder(args);
 
+        builder.Host.UseSystemd();
+        
         // Add services to the container.
         builder.Services.AddRazorPages();
 
@@ -185,6 +187,8 @@ public class Program
         app.UseStaticFiles();
         app.MapControllers();
         app.MapHub<LettuceHub>("/lettuceHub");
+        
+        
 
         await app.RunAsync();
     }
