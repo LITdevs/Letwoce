@@ -601,7 +601,7 @@
     function mkTooltip(tile, pawn, pos, tooltip = window.lettuce.tooltip) {
         tooltip.element.querySelector("#tilecoords").innerText = `(${tile.x},${tile.y})`;
         tooltip.element.querySelector("#hoveredpawn").innerText = pawn ? pawn.displayName : "Nobody";
-        tooltip.element.querySelector(".pfp").src = pawn?.avatarUri ? pawn.avatarUri : "/assets/p3b.png";
+        tooltip.element.querySelector(".pfp").src = pawn ? (pawn?.avatarUri ? pawn.avatarUri : "/assets/p3b.png") : "";
         if(pawn?.killedAt) {
             tooltip.element.querySelector("#hoveredunits").innerHTML = deathStamp(pawn);
         } else if(pawn) {
