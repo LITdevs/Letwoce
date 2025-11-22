@@ -224,7 +224,7 @@ public class LettuceHub : Hub
                 {
                     ActionById = pawn.Id,
                     ActionToId = pawn.Id,
-                    EventText = $"{pawn.DisplayName} wins the game.",
+                    EventText = $"{pawn.DisplayName} wins the game",
                     LettuceCount = 0,
                     Died = false,
                     ActionType = ActionType.WinnerWinnerLettuceDinner
