@@ -22,6 +22,7 @@ public class Pawn
     public DateTimeOffset? KilledAt { get; set; }
     public Guid? KilledById { get; set; }
     
+    [System.Text.Json.Serialization.JsonIgnore] [JsonIgnore]
     public Guid? Vote { get; set; }
     
     [MaxLength(1024)]
