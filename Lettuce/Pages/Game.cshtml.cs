@@ -10,6 +10,7 @@ public class GameModel(PgContext pg) : PageModel
 {
     public Pawn? OwnPawn { get; set; }
     public bool IsPlayer => OwnPawn != null;
+    public required DateTimeOffset FirstEventTime { get; set; }
     
     public async Task OnGetAsync()
     {
@@ -19,5 +20,8 @@ public class GameModel(PgContext pg) : PageModel
             var pawn = await pg.Pawns.FirstOrDefaultAsync(p => p.Id == pawnId);
             OwnPawn = pawn;
         }
+
+        var firstEvent = await pg.Events.FirstOrDefaultAsync();
+        FirstEventTime = (firstEvent?.Timestamp ?? DateTimeOffset.UtcNow);
     }
 }

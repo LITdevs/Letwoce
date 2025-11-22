@@ -54,6 +54,7 @@
 
 <script>
     const MY_UUID = "@Model.OwnPawn?.Id.ToString()";
+    const FIRST_EVENT_TIME = new Date("@Html.Raw(Model.FirstEventTime)");
     const GRID_WIDTH = @Program.GridWidth;
     const GRID_HEIGHT = @Program.GridHeight;
     const PAWN_SIZE = 100;
@@ -157,7 +158,6 @@
             let count = await connection.invoke("GetLiveCount")
             updateLiveCount(count)
         }, 1000)
-
 
         window.lettuce.pawnTexture = await PIXI.Assets.load("/assets/pawn.png");
         window.lettuce.deadPawnTexture = await PIXI.Assets.load("/assets/pawn_dead.png");
@@ -435,6 +435,12 @@
     const posToTile = (pos) => ({x:Math.floor(pos.x/TILE_SIZE),y:Math.floor(pos.y/TILE_SIZE)});
     const tileToPos = (tile) => ({x: tile.x * TILE_SIZE + TILE_SIZE / 2,y: tile.y * TILE_SIZE + TILE_SIZE / 2});
     const isDiffTile = (tile1,tile2) => tile1.x !== tile2.x || tile1.y !== tile2.y;
+    const dayDiff = (d1, d2) => {
+        const date1 = new Date(d1), date2 = new Date(d2);
+        date1.setHours(0, 0, 0, 0); date2.setHours(0, 0, 0, 0);
+        return (date2 - date1) / (1000 * 60 * 60 * 24);
+    };
+
     const tileDistance = (tile1, tile2=window.lettuce.pawns.find(pawn=>pawn.id===MY_UUID)) => {
         // from lettuce1
         let diffX = tile1.x - tile2.x;
@@ -588,7 +594,7 @@
         const eventWrap = document.createElement("details");
         eventWrap.open = true;
         eventWrap.setAttribute("date", time.toLocaleDateString());
-        eventWrap.innerHTML = `<summary>${time.toLocaleDateString()}</summary>`;
+        eventWrap.innerHTML = `<summary><span>${time.toLocaleDateString()}</span> <span>Day ${dayDiff(FIRST_EVENT_TIME, new Date())}</span></summary>`;
         eventspanel.prepend(eventWrap);
         return eventWrap;
     }

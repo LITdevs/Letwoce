@@ -297,7 +297,17 @@ main {
 }
 #eventspanel details summary {
     cursor: pointer;
+    display: flex;
+    justify-content: space-between;
     margin-bottom: .5em;
+}
+#eventspanel details summary span:first-child:before {
+    content: "➔ ";
+    display: inline-block;
+    width: 1em;
+}
+#eventspanel details[open] summary span:first-child:before {
+    content: "🡻 ";
 }
 .event {
     display: flex;
