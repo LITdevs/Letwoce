@@ -162,6 +162,7 @@
 
         window.lettuce.pawnTexture = await PIXI.Assets.load("/assets/pawn_gs.png");
         window.lettuce.pawnTextureA = await PIXI.Assets.load("/assets/pawn_a.png");
+        window.lettuce.pawnTextureWinner = await PIXI.Assets.load("/assets/pawn_winner.png");
         window.lettuce.deadPawnTexture = await PIXI.Assets.load("/assets/pawn_dead_gs.png");
         window.lettuce.deadPawnTextureA = await PIXI.Assets.load("/assets/pawn_dead_a.png");
         window.lettuce.pawnSpriteTints = {};
@@ -266,11 +267,13 @@
         document.getElementById("pixi").appendChild(app.canvas);
 
         window.lettuce.otherCircles = {};
+        let pawnsAlive = window.lettuce.pawns.filter(p => p.alive).length
         window.lettuce.pawns.sort((a, b) => a.displayName.localeCompare(b.displayName)).forEach(pawn => {
             const spriteBox = viewport.addChild(new PIXI.Container());
             const sprite = spriteBox.addChild(new PIXI.Sprite(pawn.alive ? window.lettuce.pawnTexture : window.lettuce.deadPawnTexture));
             const spriteTint = spriteBox.addChild(new PIXI.Sprite(pawn.alive ? window.lettuce.pawnTextureA : window.lettuce.deadPawnTextureA));
 
+            
             spriteBox.zIndex = 99;
             spriteTint.blendMode = 'multiply'
             // spriteTint.filters = [new PIXI.ColorBlend()];
@@ -284,7 +287,6 @@
 
             spriteTint.tint = { r: pawn.color.r, g: pawn.color.g, b: pawn.color.b, a: pawn.color.a }
 
-            let css = getPawnTintCss(pawn.id);
 
             
             sprite.setSize(PAWN_SIZE);
@@ -295,6 +297,11 @@
             window.lettuce.pawnBoxes[pawn.id] = spriteBox;
             
             if(pawn.id === "ffffffff-ffff-ffff-ffff-ffffffffffff") return;
+
+            if (pawnsAlive === 2 && pawn.alive) {
+                spriteTint.tint = 0xffffff
+                sprite.texture = window.lettuce.pawnTextureWinner
+            }
             
             const playerBlock = document.createElement("div");
             playerBlock.classList.add("aviebox");
@@ -393,6 +400,12 @@
 
     connection.on("NewEvent", (eventDto) => {
         mkEvent(eventDto)
+        if (eventDto.actionType === 6) {
+            console.log("Winner winner", eventDto)
+            window.lettuce.pawnSprites[eventDto.actionById].texture = window.lettuce.pawnTextureWinner;
+            window.lettuce.pawnSpriteTints[eventDto.actionById].tint = 0xffffff;
+            // insert confetti here - wow you remembered <3
+        }
     })
 
     connection.on("UpdateLiveCount", (count) => {

@@ -227,8 +227,9 @@ public class LettuceHub : Hub
                     EventText = $"{pawn.DisplayName} wins the game.",
                     LettuceCount = 0,
                     Died = false,
-                    ActionType = ActionType.WinnerWinnerChickenDinner
+                    ActionType = ActionType.WinnerWinnerLettuceDinner
                 };
+                pg.Add(e4);
                 en.HandleEvent(e4);
                 await Clients.All.SendAsync("Winner", pawn.Id);
             }
