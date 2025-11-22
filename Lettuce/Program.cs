@@ -138,7 +138,7 @@ public class Program
             q.AddTrigger(t => t
                 .WithIdentity("Daily")
                 .ForJob(jobKey)
-                .WithCronSchedule("0 0 14 * * ?")
+                .WithCronSchedule("0 0 12 * * ?")
                 .WithDescription("Daily cron trigger"));
             
             var logKey = new JobKey("logKey");
