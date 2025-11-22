@@ -623,6 +623,10 @@
         const eventBlock = document.createElement("div");
         eventBlock.classList.add("event");
         eventBlock.innerHTML = `<div class="tint-image-holder"><img class="left" src="/assets/pawn_gs.png" alt=""/><img src="/assets/pawn_b.png" style="${actionByTint.filter}" class="tint left" alt=""></div><span></span><div class="tint-image-holder"><img class="right" src="/assets/pawn_gs.png"/><img src="/assets/pawn_b.png" style="${actionToTint.filter}" class="tint right" alt=""></div>`;
+        if (event.actionType === 3) {
+            eventBlock.innerHTML = `<div class="tint-image-holder"><img class="left" src="/assets/lettuce.png" alt=""/></div><span></span><div class="tint-image-holder"><img class="right" src="/assets/lettuce.png"/></div>`;
+            
+        }
         eventBlock.querySelector("span").innerText = event.eventText + ` at ${new Date(event.timestamp).toLocaleTimeString()}`;
         
         if(event.actionType === 0) {
