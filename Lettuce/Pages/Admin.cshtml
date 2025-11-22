@@ -6,6 +6,12 @@
 <link rel="stylesheet" href="~/css/game.css" asp-append-version="true"/>
 <script src="~/js/signalr/dist/browser/signalr.js"></script>
 
+<style>
+    main {
+        overflow-y: scroll;
+    }
+</style>
+
 <div>
     <p>This page is @(User.Identity?.IsAuthenticated == true ? "Authorized" : "Unauthorized")!</p>
     <p>Currently there are <span id="count">?</span> players on the page</p>
@@ -71,6 +77,7 @@
                 Lettuce: <input type="number" value="@pawn.Actions" id="pawn_@pawn.Id.ToString()_lettuce"/>
                 <button onclick="setLettuce('@pawn.Id.ToString()')">Set lettuces</button>
             </span>
+            <button onclick="resetColor('@pawn.Id.ToString()')">Reset color for @pawn.DisplayName</button>
         }
     }
 </ul>
@@ -267,6 +274,11 @@
         window.location.reload();
     }
 
+    async function resetColor(id) {
+        await connection.invoke("ResetColor", id);
+        window.location.reload();
+    }
+    
     async function forceMove(id) {
         let x = Number(document.getElementById(`pawn_${id}_x`).value);
         let y = Number(document.getElementById(`pawn_${id}_x`).value);

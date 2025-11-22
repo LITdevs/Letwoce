@@ -42,6 +42,24 @@
     }
 }
 
+.tint-image-holder {
+    position: relative;
+    width: min-content;
+}
+
+.tint-image-holder .tint {
+    position: absolute;
+    inset: 0;
+    display: block;
+    object-fit: contain;
+    mix-blend-mode: multiply;
+    pointer-events: none;
+}
+
+.tint-image-holder .base {
+    display: block;
+}
+
 
 html {
     position: relative;
@@ -324,9 +342,9 @@ main {
 .event img {
     height: 4em;
 }
-.event img:first-child {
+.event .left {
     transform: translateX(-1em);
  }
-.event img:last-child {
+.event .right {
     transform: scaleX(-1) translateX(-1em);
 }

@@ -435,6 +435,7 @@ public class LettuceHub : Hub
 
         await pg.Events.ExecuteDeleteAsync();
         await pg.Votes.ExecuteDeleteAsync();
+        await pg.PlayerCountLogs.ExecuteDeleteAsync();
 
         await pg.SaveChangesAsync();
         return true;
@@ -468,6 +469,23 @@ public class LettuceHub : Hub
         var pawnToMove = await pg.Pawns.FirstOrDefaultAsync(p => p.Id == pawnToMoveId);
         if (pawnToMove == null) return false;
         pawnToMove.Actions = lettuce;
+        await pg.SaveChangesAsync();
+        return true;
+    }
+    
+    
+    [Authorize]
+    public async Task<bool> ResetColor(PgContext pg, Guid pawnToReset)
+    {
+        var pawnId = Guid.Parse(Context.User!.GetClaim("pawnId")!);
+        var pawn = await pg.Pawns.FirstOrDefaultAsync(p => p.Id == pawnId);
+        if (pawn == null) return false;
+        if (!pawn.IsAdmin) return false;
+
+        var pawnToMove = await pg.Pawns.FirstOrDefaultAsync(p => p.Id == pawnToReset);
+        if (pawnToMove == null) return false;
+        pawnToMove.Color = Color.FromArgb(255, Random.Shared.Next(0, 255), Random.Shared.Next(0, 255), Random.Shared.Next(0, 255));
+        
         await pg.SaveChangesAsync();
         return true;
     }

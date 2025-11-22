@@ -31,7 +31,7 @@ public class PgContext(DbContextOptions<PgContext> options) : DbContext(options)
                 Y = 11,
                 Health = int.MaxValue,
                 Actions = int.MaxValue,
-                Color = Color.FromArgb(0, 255, 255, 255),
+                Color = Color.FromArgb(0, 146, 255, 119),
                 KilledAt = null,
                 KilledBy = null,
                 AvatarUri = "https://015-cdn.b-cdn.net/db49f42ed7b4a0f5a209dc00f8d780d5.png",

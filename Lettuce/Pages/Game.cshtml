@@ -64,6 +64,7 @@
     const RANGE_LINEWIDTH = 10;
     const sleep = ms => new Promise(r => setTimeout(r, ms));
 </script>
+<script src="/js/tint.js" asp-append-version="true"></script>
 <script src="/js/pixi/pixi.min.js" asp-append-version="true"></script>
 <script src="/js/pixi/pixi_viewport.iife.js" asp-append-version="true"></script>
 
@@ -159,8 +160,11 @@
             updateLiveCount(count)
         }, 1000)
 
-        window.lettuce.pawnTexture = await PIXI.Assets.load("/assets/pawn.png");
-        window.lettuce.deadPawnTexture = await PIXI.Assets.load("/assets/pawn_dead.png");
+        window.lettuce.pawnTexture = await PIXI.Assets.load("/assets/pawn_gs.png");
+        window.lettuce.pawnTextureA = await PIXI.Assets.load("/assets/pawn_a.png");
+        window.lettuce.deadPawnTexture = await PIXI.Assets.load("/assets/pawn_dead_gs.png");
+        window.lettuce.deadPawnTextureA = await PIXI.Assets.load("/assets/pawn_dead_a.png");
+        window.lettuce.pawnSpriteTints = {};
         window.lettuce.pawnSprites = {};
         window.lettuce.pawnBoxes = {};
         
@@ -265,14 +269,28 @@
         window.lettuce.pawns.sort((a, b) => a.displayName.localeCompare(b.displayName)).forEach(pawn => {
             const spriteBox = viewport.addChild(new PIXI.Container());
             const sprite = spriteBox.addChild(new PIXI.Sprite(pawn.alive ? window.lettuce.pawnTexture : window.lettuce.deadPawnTexture));
+            const spriteTint = spriteBox.addChild(new PIXI.Sprite(pawn.alive ? window.lettuce.pawnTextureA : window.lettuce.deadPawnTextureA));
 
             spriteBox.zIndex = 99;
+            spriteTint.blendMode = 'multiply'
+            // spriteTint.filters = [new PIXI.ColorBlend()];
             sprite.anchor.set(0.5, 0.5);
-            sprite.tint = "0x" + pawn.color.name;
+            spriteTint.anchor.set(0.5, 0.5);
+            
+            // const colorMatrix = new PIXI.ColorMatrixFilter();
+            // sprite.filters = [colorMatrix]
+            
+            // colorMatrix.tint({ r: pawn.color.r, g: pawn.color.g, b: pawn.color.b, a: pawn.color.a }, true)
+
+            spriteTint.tint = { r: pawn.color.r, g: pawn.color.g, b: pawn.color.b, a: pawn.color.a }
+
+            let css = getPawnTintCss(pawn.id);
+
+            
             sprite.setSize(PAWN_SIZE);
-            sprite.eventMode = "static";
-            sprite.pawnID = pawn.id;
+            spriteTint.setSize(PAWN_SIZE);
             moveToTile(spriteBox, pawn.x, pawn.y, false);
+            window.lettuce.pawnSpriteTints[pawn.id] = spriteTint;
             window.lettuce.pawnSprites[pawn.id] = sprite;
             window.lettuce.pawnBoxes[pawn.id] = spriteBox;
             
@@ -400,9 +418,13 @@
                 killedAt: new Date().getTime(),
                 killedById: attackerId
             });
-            
+
             const atkSprite = window.lettuce.pawnSprites[attacked.id];
-            if(atkSprite) atkSprite.texture = window.lettuce.deadPawnTexture;
+            const atkSpriteTint = window.lettuce.pawnSpriteTints[attacked.id];
+            if(atkSprite) {
+                atkSprite.texture = window.lettuce.deadPawnTexture;
+                atkSpriteTint.texture = window.lettuce.deadPawnTextureA;
+            }
         }
     })
 
@@ -580,10 +602,13 @@
     function mkEvent(event) {
         const eventTime = new Date(event.timestamp);
         const wrapper = document.querySelector(`#eventspanel details[date="${eventTime.toLocaleDateString()}"]`) ?? mkEventWrap(eventTime);
+
+        const actionByTint = getPawnTintCss(event.actionById);
+        const actionToTint = getPawnTintCss(event.actionToId);
         
         const eventBlock = document.createElement("div");
         eventBlock.classList.add("event");
-        eventBlock.innerHTML = `<img src="/assets/pawn.png"/><span></span><img src="/assets/pawn.png"/>`;      
+        eventBlock.innerHTML = `<div class="tint-image-holder"><img class="left" src="/assets/pawn_gs.png" alt=""/><img src="/assets/pawn_b.png" style="${actionByTint.filter}" class="tint left" alt=""></div><span></span><div class="tint-image-holder"><img class="right" src="/assets/pawn_gs.png"/><img src="/assets/pawn_b.png" style="${actionToTint.filter}" class="tint right" alt=""></div>`;
         eventBlock.querySelector("span").innerText = event.eventText + ` at ${new Date(event.timestamp).toLocaleTimeString()}`;
         
         if(event.actionType === 0) {
@@ -593,11 +618,19 @@
         
         wrapper.prepend(eventBlock);
     }
+    
+    function getPawnTintCss(pawnId) {
+        const pawn = window.lettuce.pawns.find(p => p.id === pawnId);
+        const color = new Color(pawn.color.r, pawn.color.g, pawn.color.b);
+        const solver = new Solver(color);
+        return solver.solve();
+    }
+    
     function mkEventWrap(time) {
         const eventWrap = document.createElement("details");
         eventWrap.open = true;
         eventWrap.setAttribute("date", time.toLocaleDateString());
-        eventWrap.innerHTML = `<summary><span>${time.toLocaleDateString()}</span> <span>Day ${dayDiff(FIRST_EVENT_TIME, time)}</span></summary>`;
+        eventWrap.innerHTML = `<summary><span>${time.toLocaleDateString()}</span> <span>Day ${dayDiff(FIRST_EVENT_TIME, time) + 1}</span></summary>`;
         eventspanel.prepend(eventWrap);
         return eventWrap;
     }
