@@ -594,7 +594,7 @@
         const eventWrap = document.createElement("details");
         eventWrap.open = true;
         eventWrap.setAttribute("date", time.toLocaleDateString());
-        eventWrap.innerHTML = `<summary><span>${time.toLocaleDateString()}</span> <span>Day ${dayDiff(FIRST_EVENT_TIME, new Date())}</span></summary>`;
+        eventWrap.innerHTML = `<summary><span>${time.toLocaleDateString()}</span> <span>Day ${dayDiff(FIRST_EVENT_TIME, time)}</span></summary>`;
         eventspanel.prepend(eventWrap);
         return eventWrap;
     }
