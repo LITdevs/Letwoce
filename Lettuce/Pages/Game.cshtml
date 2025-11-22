@@ -330,7 +330,7 @@
                     <div class="units">${pawn.alive ? unitStamp(pawn) : deathStamp(pawn)}</div>
                 </div>
             `
-            playerBlock.querySelector(".pfp img").src = pawn.avatarUri;
+            playerBlock.querySelector(".pfp img").src = pawn.avatarUri ?? "/assets/p3b.png";
             playerBlock.querySelector(".pfp .voteicon").classList.toggle("hidden", !pawn.voted);
             playerBlock.querySelector(".name").innerText = pawn.displayName;
             document.querySelector("#playerspanel").appendChild(playerBlock);
@@ -601,7 +601,7 @@
     function mkTooltip(tile, pawn, pos, tooltip = window.lettuce.tooltip) {
         tooltip.element.querySelector("#tilecoords").innerText = `(${tile.x},${tile.y})`;
         tooltip.element.querySelector("#hoveredpawn").innerText = pawn ? pawn.displayName : "Nobody";
-        tooltip.element.querySelector(".pfp").src = pawn?.avatarUri ? pawn.avatarUri : "";
+        tooltip.element.querySelector(".pfp").src = pawn?.avatarUri ? pawn.avatarUri : "/assets/p3b.png";
         if(pawn?.killedAt) {
             tooltip.element.querySelector("#hoveredunits").innerHTML = deathStamp(pawn);
         } else if(pawn) {
