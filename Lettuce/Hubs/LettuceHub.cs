@@ -187,7 +187,7 @@ public class LettuceHub : Hub
                 EventText = $"<@{attackedPawn.DiscordId}> You have been killed. You may now vote in the Supreme Court of Lettuce to support a living fighter.",
                 LettuceCount = 0,
                 Died = false,
-                ActionType = ActionType.Attack
+                ActionType = ActionType.DiscordOnly
             };
             en.HandleEvent(e3);
             var voters = await pg.Pawns.Where(p => p.Vote == attackedPawn.Id).ToArrayAsync();
@@ -202,7 +202,7 @@ public class LettuceHub : Hub
                     EventText = $"{pings} the fighter you voted for has been killed by {pawn.DisplayName}. Please choose a new fighter to support.",
                     LettuceCount = 0,
                     Died = false,
-                    ActionType = ActionType.Attack
+                    ActionType = ActionType.DiscordOnly
                 };
                 foreach (var voter in voters)
                 {
@@ -484,6 +484,8 @@ public class LettuceHub : Hub
             {
                 Timestamp = e.Timestamp,
                 Id = e.Id,
+                ActionById = e.ActionById,
+                ActionToId = e.ActionToId,
                 EventText = e.EventText,
                 ActionType = e.ActionType
             }).Take(50).ToArrayAsync();
@@ -495,5 +497,7 @@ public record EventDto
     public DateTimeOffset Timestamp { get; set; }
     public Guid Id { get; set; }
     public required string EventText { get; set; }
+    public required Guid ActionById { get; set; }
+    public required Guid ActionToId { get; set; }
     public ActionType ActionType { get; set; }
 }

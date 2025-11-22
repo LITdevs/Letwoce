@@ -54,7 +54,7 @@
 
 <script>
     const MY_UUID = "@Model.OwnPawn?.Id.ToString()";
-    const FIRST_EVENT_TIME = new Date("@Html.Raw(Model.FirstEventTime)");
+    const FIRST_EVENT_TIME = new Date(@Html.Raw(Model.FirstEventTime.ToUnixTimeMilliseconds()));
     const GRID_WIDTH = @Program.GridWidth;
     const GRID_HEIGHT = @Program.GridHeight;
     const PAWN_SIZE = 100;
@@ -373,6 +373,9 @@
         }, 2000);
     }
 
+    connection.on("NewEvent", (eventDto) => {
+        mkEvent(eventDto)
+    })
 
     connection.on("UpdateLiveCount", (count) => {
         console.log("Got count from server");

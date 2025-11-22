@@ -21,7 +21,7 @@ public class GameModel(PgContext pg) : PageModel
             OwnPawn = pawn;
         }
 
-        var firstEvent = await pg.Events.FirstOrDefaultAsync();
-        FirstEventTime = (firstEvent?.Timestamp ?? DateTimeOffset.UtcNow);
+        var firstEvent = await pg.Events.OrderBy(e => e.Timestamp).FirstOrDefaultAsync();
+        FirstEventTime = firstEvent?.Timestamp ?? DateTimeOffset.UtcNow;
     }
 }

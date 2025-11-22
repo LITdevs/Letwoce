@@ -34,5 +34,6 @@ public enum ActionType
     LettuceDrop,
     Scol,
     Speak,
-    WinnerWinnerChickenDinner
+    WinnerWinnerChickenDinner,
+    DiscordOnly
 }
