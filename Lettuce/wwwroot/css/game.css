@@ -263,7 +263,7 @@ main {
         display: none;
     }
     #game[active-panel] #panels, #panels > div {
-        width: 100%;
+        width: calc(100% - .5em);
     }
 }
 @media (max-width: 45em) {
