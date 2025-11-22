@@ -20,6 +20,8 @@ public class Program
     {
         var builder = WebApplication.CreateBuilder(args);
 
+        builder.Host.UseSystemd();
+        
         // Add services to the container.
         builder.Services.AddRazorPages();
 
@@ -136,7 +138,7 @@ public class Program
             q.AddTrigger(t => t
                 .WithIdentity("Daily")
                 .ForJob(jobKey)
-                .WithCronSchedule("0 0 14 * * ?")
+                .WithCronSchedule("0 0 12 * * ?")
                 .WithDescription("Daily cron trigger"));
             
             var logKey = new JobKey("logKey");
@@ -185,6 +187,8 @@ public class Program
         app.UseStaticFiles();
         app.MapControllers();
         app.MapHub<LettuceHub>("/lettuceHub");
+        
+        
 
         await app.RunAsync();
     }
