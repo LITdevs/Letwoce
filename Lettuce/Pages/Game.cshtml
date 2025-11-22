@@ -188,6 +188,7 @@
         const gameEvents = await connection.invoke("GetEvents");
         gameEvents.reverse().forEach(mkEvent);
         if(gameEvents.length === 50) eventspanel.innerHTML += "<span>Can't load more than that, sorry! :3<br/><br/></span>";
+        if(gameEvents.length === 0) eventspanel.innerHTML += "<span>No events yet, try doing something!<br/><br/></span>";
         if(!matchMedia("(max-width: 60em)").matches) panelSwap("events");
         
 
