@@ -84,7 +84,7 @@ public class LettuceDropJob(PgContext pg, ILogger<LettuceDropJob> logger, IHubCo
             {
                 ActionById = Guid.AllBitsSet,
                 ActionToId = pawn.Id,
-                EventText = $"{pawn.DisplayName} received {drop.Value.votes} votes from the Supreme Court of Lettuce and has been awarded {drop.Value.lettuce} lettuce.",
+                EventText = $"{pawn.DisplayName} received {drop.Value.votes} vote{(drop.Value.votes == 1 ? "" : "s")} from the Supreme Court of Lettuce and has been awarded {drop.Value.lettuce} lettuce.",
                 NewX = 0,
                 NewY = 0,
                 OldX = 0,
