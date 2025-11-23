@@ -230,7 +230,9 @@
             const myPawn = window.lettuce.pawns.find(pawn => pawn.id === MY_UUID);
             
             if(dragging) return;
-            
+            if(tile.x < 0 || tile.x >= GRID_WIDTH) return;
+            if(tile.y < 0 || tile.y >= GRID_HEIGHT) return;
+
             tooltip.locked = true;
             mkTooltip(tile,pawn,pos);
             tooltip.element.classList.remove("pointerphobe");
