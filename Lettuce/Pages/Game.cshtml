@@ -126,17 +126,17 @@
         }
     }
     function togglePawnRange(pawnId, makeVisible) {
-        if(!window.lettuce.pawns.find(p=>p.id===pawnId).alive) return;
         const targetCircle = pawnId === MY_UUID ? window.lettuce.myCircle : window.lettuce.otherCircles[pawnId];
         const pos = window.lettuce.pawnBoxes[pawnId].position;
-        const mkThistip = () => mkTooltip(posToTile(pos), window.lettuce.pawns.find(p=>p.id===pawnId), pos);
+        if(makeVisible) mkTooltip(posToTile(pos), window.lettuce.pawns.find(p=>p.id===pawnId), pos);
         
+        if(!window.lettuce.pawns.find(p=>p.id===pawnId).alive) return;
         if(window.lettuce.superShitRangeMode) {
             if(makeVisible) {
                 // focus on the player
                 if(MY_UUID) window.lettuce.myCircle.visible = false;
                 Object.values(window.lettuce.otherCircles).forEach(c => c.visible = false);
-                targetCircle.visible = true; mkThistip();
+                targetCircle.visible = true;
             } else {
                 // flick everything back on ( GOD end me already )
                 if (MY_UUID && window.lettuce.pawns.find(p=>p.id===MY_UUID).alive) window.lettuce.myCircle.visible = true;
@@ -144,7 +144,7 @@
             }
         } else {
             if(pawnId === MY_UUID && window.lettuce.rangeDisplay) return;
-            targetCircle.visible = makeVisible; mkThistip();
+            targetCircle.visible = makeVisible;
         }
     }
     
