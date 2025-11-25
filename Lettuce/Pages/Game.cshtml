@@ -197,7 +197,7 @@
         const tooltip = new PIXI.DOMContainer();
         window.lettuce.tooltip = tooltip;
         tooltip.element.classList.add("pointerphobe");
-        tooltip.element.innerHTML = `<div id="tooltip"><div id="tileinfowrap"><div id="tiledata"><span id="tileinfo"><span id="tilecoords"></span>&bull;<span id="hoveredpawn">Nobody</span></span><span id="hoveredunits"></span></div><img class="pfp" src=""></div><span id="actions"></span></div>`
+        tooltip.element.innerHTML = `<div id="tooltip"><div id="tileinfowrap"><div id="tiledata"><span id="tileinfo"><span id="tilecoords"></span>&bull;<span id="hoveredpawn">Nobody</span></span><span id="hoveredunits"></span><span id="killer"></span></div><img class="pfp" src=""></div><span id="actions"></span></div>`
         
         if (urlParams.get("disableUi")) {
             tooltip.element.style.display = "none";
@@ -606,10 +606,13 @@
         tooltip.element.querySelector(".pfp").src = pawn ? (pawn?.avatarUri ? pawn.avatarUri : "/assets/p3b.png") : "";
         if(pawn?.killedAt) {
             tooltip.element.querySelector("#hoveredunits").innerHTML = deathStamp(pawn);
+            tooltip.element.querySelector("#killer").innerText = `Killed by ${window.lettuce.pawns.find(p=>p.id===pawn.killedById).displayName}`;
         } else if(pawn) {
             tooltip.element.querySelector("#hoveredunits").innerHTML = unitStamp(pawn);
+            tooltip.element.querySelector("#killer").innerText = "";
         } else {
             tooltip.element.querySelector("#hoveredunits").innerHTML = "";
+            tooltip.element.querySelector("#killer").innerText = "";
         }
         tooltip.position.set(pos.x+20,pos.y);
     }
