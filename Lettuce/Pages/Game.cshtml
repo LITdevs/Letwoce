@@ -74,6 +74,7 @@
     window.lettuce.isConnected = false;
     window.lettuce.rangeDisplay = localStorage.getItem("rangeDisplay") === "true";
     window.lettuce.superShitRangeMode = localStorage.getItem("superShitRangeMode") === "true";
+    const anyRangeMode = () => window.lettuce.rangeDisplay || window.lettuce.superShitRangeMode;
     if (localStorage.getItem("rangeDisplay") == null) {
         console.log("Set default range mode");
         window.lettuce.superShitRangeMode = false;
@@ -145,6 +146,19 @@
         } else {
             if(pawnId === MY_UUID && window.lettuce.rangeDisplay) return;
             targetCircle.visible = makeVisible;
+        }
+    }
+    function toggleTempRange(tile) {
+        const existingRange = window.lettuce.temporaryCircles[[tile.x,tile.y]];
+        if(existingRange) {
+            window.lettuce.viewport.removeChild(existingRange);
+            existingRange.destroy();
+            delete window.lettuce.temporaryCircles[[tile.x,tile.y]];
+        } else {
+            const newRange = window.lettuce.viewport.addChild(new PIXI.Graphics());
+            window.lettuce.temporaryCircles[[tile.x,tile.y]] = newRange;
+            
+            newRange.position = tileToPos(tile); mkCircle(newRange);
         }
     }
     
@@ -240,7 +254,7 @@
             
             if(myPawn && pawn !== myPawn) {
                 const distance = tileDistance(tile);
-                if(!myPawn.alive && pawn.alive) {
+                if(!myPawn.alive && pawn?.alive) {
                     tooltip.element.querySelector("#actions").appendChild(mkAction("hand-holding-heart", `Vote${pawn.voted?"d":""}`, async () => {
                         const prevVote = window.lettuce.pawns.find(p=>p.voted===true);
                         await connection.invoke("Vote", pawn.id) // https://youtu.be/J9udiROQchg?t=430
@@ -264,7 +278,8 @@
             } else if(@(Model.IsPlayer ? "false" : "true")) {
                 tooltip.element.querySelector("#actions").appendChild(mkAction("right-to-bracket", "Log in", () => location.pathname = "/login"));
             }
-            
+
+            if(!pawn?.alive || !window.lettuce.superShitRangeMode) tooltip.element.querySelector("#actions").appendChild(mkAction("crosshairs", "Range", () => toggleTempRange(tile)));
             tooltip.element.querySelector("#actions").appendChild(mkAction("ban", "Cancel"));
         });
         viewport.on('drag-start', () => {
@@ -279,27 +294,18 @@
         document.getElementById("pixi").appendChild(app.canvas);
 
         window.lettuce.otherCircles = {};
+        window.lettuce.temporaryCircles = {};
         let pawnsAlive = window.lettuce.pawns.filter(p => p.alive).length
         window.lettuce.pawns.sort((a, b) => a.displayName.localeCompare(b.displayName)).forEach(pawn => {
             const spriteBox = viewport.addChild(new PIXI.Container());
             const sprite = spriteBox.addChild(new PIXI.Sprite(pawn.alive ? window.lettuce.pawnTexture : window.lettuce.deadPawnTexture));
             const spriteTint = spriteBox.addChild(new PIXI.Sprite(pawn.alive ? window.lettuce.pawnTextureA : window.lettuce.deadPawnTextureA));
-
             
             spriteBox.zIndex = 99;
-            spriteTint.blendMode = 'multiply'
-            // spriteTint.filters = [new PIXI.ColorBlend()];
+            spriteTint.blendMode = 'multiply';
+            spriteTint.tint = { r: pawn.color.r, g: pawn.color.g, b: pawn.color.b, a: pawn.color.a };
             sprite.anchor.set(0.5, 0.5);
             spriteTint.anchor.set(0.5, 0.5);
-            
-            // const colorMatrix = new PIXI.ColorMatrixFilter();
-            // sprite.filters = [colorMatrix]
-            
-            // colorMatrix.tint({ r: pawn.color.r, g: pawn.color.g, b: pawn.color.b, a: pawn.color.a }, true)
-
-            spriteTint.tint = { r: pawn.color.r, g: pawn.color.g, b: pawn.color.b, a: pawn.color.a }
-
-
             
             sprite.setSize(PAWN_SIZE);
             spriteTint.setSize(PAWN_SIZE);
@@ -338,8 +344,7 @@
             document.querySelector("#playerspanel").appendChild(playerBlock);
 
             const spriteTurtle = spriteBox.addChild(new PIXI.Graphics());
-            spriteTurtle.circle(0, 0, TILE_SIZE*4).stroke({ width: RANGE_LINEWIDTH, color: 0xff0000 });
-            spriteTurtle.circle(0, 0, TILE_SIZE*7).stroke({ width: RANGE_LINEWIDTH, color: 0x00ff00 });
+            mkCircle(spriteTurtle);
             if(pawn.id !== MY_UUID && !window.lettuce.superShitRangeMode) spriteTurtle.visible = false;
             if(!window.lettuce.rangeDisplay && !window.lettuce.superShitRangeMode) spriteTurtle.visible = false;
             if(!pawn.alive) spriteTurtle.visible = false;
@@ -470,7 +475,6 @@
     })
     
     connection.on("LettuceDrop", (amount) => {
-        console.log("Drop", amount);
         window.lettuce.pawns.forEach(pawn => {
             if (pawn.id === "ffffffff-ffff-ffff-ffff-ffffffffffff") return;
             updatePawn(pawn.id, {actions: pawn.actions+amount});
@@ -486,18 +490,19 @@
     const posToTile = (pos) => ({x:Math.floor(pos.x/TILE_SIZE),y:Math.floor(pos.y/TILE_SIZE)});
     const tileToPos = (tile) => ({x: tile.x * TILE_SIZE + TILE_SIZE / 2,y: tile.y * TILE_SIZE + TILE_SIZE / 2});
     const isDiffTile = (tile1,tile2) => tile1.x !== tile2.x || tile1.y !== tile2.y;
-    const dayDiff = (d1, d2) => {
-        const date1 = new Date(d1), date2 = new Date(d2);
-        date1.setHours(0, 0, 0, 0); date2.setHours(0, 0, 0, 0);
-        return (date2 - date1) / (1000 * 60 * 60 * 24);
-    };
-
     const tileDistance = (tile1, tile2=window.lettuce.pawns.find(pawn=>pawn.id===MY_UUID)) => {
         // from lettuce1
         let diffX = tile1.x - tile2.x;
         let diffY = tile1.y - tile2.y;
         return Math.sqrt(diffX * diffX + diffY * diffY);
     }
+
+    const dayDiff = (d1, d2) => {
+        const date1 = new Date(d1), date2 = new Date(d2);
+        date1.setHours(0, 0, 0, 0); date2.setHours(0, 0, 0, 0);
+        return (date2 - date1) / (1000 * 60 * 60 * 24);
+    };
+    
     const deathStamp = (pawn) => {
         if(!pawn?.killedAt) return "";
         return `<i class="fa-solid fa-tombstone"></i> ${((Date.now() - new Date(pawn.killedAt).getTime()) / 1000 / 60 / 60).toFixed(2)} hours`; //from lettuce1
@@ -697,4 +702,8 @@
         window.lettuce.resizeViewport();
     }
     
+    function mkCircle(turtle) {
+        turtle.circle(0, 0, TILE_SIZE*4).stroke({ width: RANGE_LINEWIDTH, color: 0xff0000 });
+        turtle.circle(0, 0, TILE_SIZE*7).stroke({ width: RANGE_LINEWIDTH, color: 0x00ff00 });
+    }
 </script>
