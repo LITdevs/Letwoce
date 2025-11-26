@@ -283,6 +283,9 @@ main {
     #game[active-panel] #panels, #panels > div {
         width: calc(100% - .5em);
     }
+    #gridbtn {
+        display: none !important;
+    }
 }
 @media (max-width: 45em) {
     #stats {
