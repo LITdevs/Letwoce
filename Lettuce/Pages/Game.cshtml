@@ -462,7 +462,7 @@
                 atkSpriteTint.texture = window.lettuce.deadPawnTextureA;
             }
 
-            const range = attackedId === MY_UUID ? window.lettuce.myCircle : window.lettuce.otherCircles[pawnId];
+            const range = attackedId === MY_UUID ? window.lettuce.myCircle : window.lettuce.otherCircles[attackedId];
             if(range) range.visible = false;
         }
     })
