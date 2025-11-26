@@ -41,6 +41,7 @@
             <button onclick="panelSwap('players')"><img src="/assets/pawn.png"> players</button>
             <button onclick="panelSwap('events')"><img src="/assets/pawn_dead.png"> events</button>
             <button onclick="toggleRange()" ><i class="fa-solid fa-crosshairs" style="color: red"></i> ranges</button>
+            <button onclick="toggleRangeMode()" ><i class="fa-solid fa-border-all"></i> grid</button>
         </div>
         <span id="pcount">? fighter online</span>
     </div>
@@ -74,6 +75,7 @@
     window.lettuce.isConnected = false;
     window.lettuce.rangeDisplay = localStorage.getItem("rangeDisplay") === "true";
     window.lettuce.superShitRangeMode = localStorage.getItem("superShitRangeMode") === "true";
+    window.lettuce.useGridRanges = localStorage.getItem("useGridRanges") !== "false";
     const anyRangeMode = () => window.lettuce.rangeDisplay || window.lettuce.superShitRangeMode;
     if (localStorage.getItem("rangeDisplay") == null) {
         console.log("Set default range mode");
@@ -126,6 +128,28 @@
             Object.values(window.lettuce.otherCircles).forEach(c => c.visible = false);
         }
     }
+    function toggleRangeMode() {
+        window.lettuce.useGridRanges = !window.lettuce.useGridRanges;
+        localStorage.setItem("useGridRanges", window.lettuce.useGridRanges.toString());
+
+        if (window.lettuce.myCircle) {
+            const myPawn = window.lettuce.pawns.find(p => p.id === MY_UUID);
+            window.lettuce.myCircle.clear();
+            if (myPawn) mkCircle(window.lettuce.myCircle, {x: myPawn.x, y: myPawn.y}, myPawn.color);
+        }
+
+        Object.entries(window.lettuce.otherCircles).forEach(([id, circle]) => {
+            const pawn = window.lettuce.pawns.find(p => p.id === id);
+            circle.clear();
+            if (pawn) mkCircle(circle, {x: pawn.x, y: pawn.y}, pawn.color);
+        });
+
+        Object.entries(window.lettuce.temporaryCircles).forEach(([key, circle]) => {
+            const [x, y] = key.split(',').map(Number);
+            circle.clear();
+            mkCircle(circle, {x, y});
+        });
+    }
     function togglePawnRange(pawnId, makeVisible) {
         const targetCircle = pawnId === MY_UUID ? window.lettuce.myCircle : window.lettuce.otherCircles[pawnId];
         const pos = window.lettuce.pawnBoxes[pawnId].position;
@@ -158,7 +182,7 @@
             const newRange = window.lettuce.viewport.addChild(new PIXI.Graphics());
             window.lettuce.temporaryCircles[[tile.x,tile.y]] = newRange;
             
-            newRange.position = tileToPos(tile); mkCircle(newRange);
+            newRange.position = tileToPos(tile); mkCircle(newRange, tile);
         }
     }
     
@@ -344,7 +368,7 @@
             document.querySelector("#playerspanel").appendChild(playerBlock);
 
             const spriteTurtle = spriteBox.addChild(new PIXI.Graphics());
-            mkCircle(spriteTurtle);
+            mkCircle(spriteTurtle, {x: pawn.x, y: pawn.y}, pawn.color);
             if(pawn.id !== MY_UUID && !window.lettuce.superShitRangeMode) spriteTurtle.visible = false;
             if(!window.lettuce.rangeDisplay && !window.lettuce.superShitRangeMode) spriteTurtle.visible = false;
             if(!pawn.alive) spriteTurtle.visible = false;
@@ -438,6 +462,14 @@
     connection.on("MoveTo", (pawnId, x, y, actions) => {
         updatePawn(pawnId, {x,y,actions});
         moveToTile(window.lettuce.pawnBoxes[pawnId], x, y);
+
+        // Redraw the circle, since grid mode takes in a tile position to avoid drawing beyond grid borders
+        const pawn = window.lettuce.pawns.find(p => p.id === pawnId);
+        const circle = pawnId === MY_UUID ? window.lettuce.myCircle : window.lettuce.otherCircles[pawnId];
+        if (circle && pawn) {
+            circle.clear();
+            mkCircle(circle, {x: x, y: y}, pawn.color);
+        }
     })
 
     connection.on("Attack", (attackerId, attackedId) => {
@@ -542,27 +574,32 @@
         const yDiff = (y-sprite.position.y)/3;
         const bump = async () => {await sleep(225);if(signal.aborted)throw"stop";sprite.position.set(sprite.position.x+xDiff, sprite.position.y+yDiff);}
 
+        const rangeCircle = sprite.children.find(child => child instanceof PIXI.Graphics);
+
         try {
             await bump();
             sprite.angle = 15;
+            if(rangeCircle) rangeCircle.angle = -15; // counter-rotate the grid :) (not ideal but eh)
             await bump();
             sprite.angle = -15;
+            if(rangeCircle) rangeCircle.angle = 15;
             await bump();
             sprite.position.set(x, y);
         } catch {} finally {
             sprite.angle = 0;
+            if(rangeCircle) rangeCircle.angle = 0;
             if(sprite.animControl?.signal === signal) sprite.animControl = null;
         }
     }
     function drawGrid(turtle, width = GRID_LINEWIDTH) {
         turtle.clear();
         for (let i = 0; i < GRID_HEIGHT; i++) {
-            turtle.moveTo(0,TILE_SIZE*i).lineTo(TILE_SIZE*GRID_WIDTH, TILE_SIZE*i).stroke({width: width});
+            turtle.moveTo(0,TILE_SIZE*i).lineTo(TILE_SIZE*GRID_WIDTH, TILE_SIZE*i).stroke({width: width, color: 0x808080, alpha: 0.6});
         }
         for (let i = 0; i < GRID_WIDTH; i++) {
-            turtle.moveTo(TILE_SIZE*i,0).lineTo(TILE_SIZE*i, TILE_SIZE*GRID_HEIGHT).stroke({width: width});
+            turtle.moveTo(TILE_SIZE*i,0).lineTo(TILE_SIZE*i, TILE_SIZE*GRID_HEIGHT).stroke({width: width, color: 0x808080, alpha: 0.6});
         }
-        turtle.rect(0,0,TILE_SIZE*GRID_WIDTH,TILE_SIZE*GRID_HEIGHT).stroke({width: width})
+        turtle.rect(0,0,TILE_SIZE*GRID_WIDTH,TILE_SIZE*GRID_HEIGHT).stroke({width: width, color: 0x808080, alpha: 0.6})
         
         let arrowFrom = urlParams.get('arrowFrom');
         let arrowTo = urlParams.get('arrowTo');
@@ -704,8 +741,77 @@
         window.lettuce.resizeViewport();
     }
     
-    function mkCircle(turtle) {
-        turtle.circle(0, 0, TILE_SIZE*4).stroke({ width: RANGE_LINEWIDTH, color: 0xff0000 });
-        turtle.circle(0, 0, TILE_SIZE*7).stroke({ width: RANGE_LINEWIDTH, color: 0x00ff00 });
+    function mkCircle(turtle, centerTile = {x: 0, y: 0}, pawnColor = null) {
+        if (!window.lettuce.useGridRanges) {
+            turtle.circle(0, 0, TILE_SIZE*4).stroke({ width: RANGE_LINEWIDTH, color: 0xff0000 });
+            turtle.circle(0, 0, TILE_SIZE*7).stroke({ width: RANGE_LINEWIDTH, color: 0x00ff00 });
+            return;
+        }
+
+        // Grid mode display
+        // Colors the tiles based on available actions on that tile + highlights outlines
+        // (and it handles not drawing outside grid borders too)
+        const attackRange = 4.25;
+        const giftRange = 7.5;
+        const maxRadius = Math.ceil(giftRange);
+        const outlineWidth = 15;
+
+        const isInRange = (dx, dy, range) => Math.sqrt(dx * dx + dy * dy) <= range;
+        const isInBounds = (tileX, tileY) => tileX >= 0 && tileX < GRID_WIDTH && tileY >= 0 && tileY < GRID_HEIGHT;
+
+        for (let dx = -maxRadius; dx <= maxRadius; dx++) {
+            for (let dy = -maxRadius; dy <= maxRadius; dy++) {
+                if (dx === 0 && dy === 0) continue;
+
+                const absoluteTileX = centerTile.x + dx;
+                const absoluteTileY = centerTile.y + dy;
+
+                if (!isInBounds(absoluteTileX, absoluteTileY)) continue;
+
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                const isAttack = distance <= attackRange;
+                const isGift = distance <= giftRange;
+
+                if (!isAttack && !isGift) continue;
+
+                const color = isAttack ? 0xff0000 : 0x00ff00;
+                const range = isAttack ? attackRange : giftRange;
+
+                turtle.rect(
+                    dx * TILE_SIZE - TILE_SIZE / 2,
+                    dy * TILE_SIZE - TILE_SIZE / 2,
+                    TILE_SIZE,
+                    TILE_SIZE
+                ).fill({ color: color, alpha: 0.2 });
+
+                const isEdgeLeft = !isInRange(dx - 1, dy, range) || !isInBounds(absoluteTileX - 1, absoluteTileY);
+                const isEdgeRight = !isInRange(dx + 1, dy, range) || !isInBounds(absoluteTileX + 1, absoluteTileY);
+                const isEdgeTop = !isInRange(dx, dy - 1, range) || !isInBounds(absoluteTileX, absoluteTileY - 1);
+                const isEdgeBottom = !isInRange(dx, dy + 1, range) || !isInBounds(absoluteTileX, absoluteTileY + 1);
+
+                const outlineColor = pawnColor ? ((pawnColor.r << 16) | (pawnColor.g << 8) | pawnColor.b) : color;
+
+                if (isEdgeLeft) {
+                    turtle.moveTo(dx * TILE_SIZE - TILE_SIZE / 2, dy * TILE_SIZE - TILE_SIZE / 2)
+                        .lineTo(dx * TILE_SIZE - TILE_SIZE / 2, dy * TILE_SIZE + TILE_SIZE / 2)
+                        .stroke({ width: outlineWidth, color: outlineColor });
+                }
+                if (isEdgeRight) {
+                    turtle.moveTo(dx * TILE_SIZE + TILE_SIZE / 2, dy * TILE_SIZE - TILE_SIZE / 2)
+                        .lineTo(dx * TILE_SIZE + TILE_SIZE / 2, dy * TILE_SIZE + TILE_SIZE / 2)
+                        .stroke({ width: outlineWidth, color: outlineColor });
+                }
+                if (isEdgeTop) {
+                    turtle.moveTo(dx * TILE_SIZE - TILE_SIZE / 2, dy * TILE_SIZE - TILE_SIZE / 2)
+                        .lineTo(dx * TILE_SIZE + TILE_SIZE / 2, dy * TILE_SIZE - TILE_SIZE / 2)
+                        .stroke({ width: outlineWidth, color: outlineColor });
+                }
+                if (isEdgeBottom) {
+                    turtle.moveTo(dx * TILE_SIZE - TILE_SIZE / 2, dy * TILE_SIZE + TILE_SIZE / 2)
+                        .lineTo(dx * TILE_SIZE + TILE_SIZE / 2, dy * TILE_SIZE + TILE_SIZE / 2)
+                        .stroke({ width: outlineWidth, color: outlineColor });
+                }
+            }
+        }
     }
 </script>
