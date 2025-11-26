@@ -680,8 +680,8 @@
         
         const playerBox = document.querySelector(`#playerspanel [player="${id}"]`);
         if(playerBox) {
-            document.querySelector(`#playerspanel [player="${id}"]`).querySelector(".units").innerHTML = pawn.alive ? unitStamp(pawn) : deathStamp(pawn);
-            document.querySelector(`#playerspanel [player="${id}"]`).querySelector(".pfp .voteicon").classList.toggle("hidden", !pawn.voted);
+            playerBox.querySelector(".units").innerHTML = pawn.alive ? unitStamp(pawn) : deathStamp(pawn);
+            playerBox.querySelector(".pfp .voteicon").classList.toggle("hidden", !pawn.voted);
         }
         if(id === MY_UUID) document.querySelector(`#stats .units`).innerHTML = pawn.alive ? unitStamp(pawn) : deathStamp(pawn);
         
