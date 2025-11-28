@@ -755,6 +755,7 @@
         const giftRange = 7.5;
         const maxRadius = Math.ceil(giftRange);
         const outlineWidth = 15;
+        const outlineWidthHalf = outlineWidth / 2;
 
         const isInRange = (dx, dy, range) => Math.sqrt(dx * dx + dy * dy) <= range;
         const isInBounds = (tileX, tileY) => tileX >= 0 && tileX < GRID_WIDTH && tileY >= 0 && tileY < GRID_HEIGHT;
@@ -792,23 +793,23 @@
                 const outlineColor = pawnColor ? ((pawnColor.r << 16) | (pawnColor.g << 8) | pawnColor.b) : color;
 
                 if (isEdgeLeft) {
-                    turtle.moveTo(dx * TILE_SIZE - TILE_SIZE / 2, dy * TILE_SIZE - TILE_SIZE / 2)
-                        .lineTo(dx * TILE_SIZE - TILE_SIZE / 2, dy * TILE_SIZE + TILE_SIZE / 2)
+                    turtle.moveTo(dx * TILE_SIZE - TILE_SIZE / 2, dy * TILE_SIZE - TILE_SIZE / 2 - outlineWidthHalf)
+                        .lineTo(dx * TILE_SIZE - TILE_SIZE / 2, dy * TILE_SIZE + TILE_SIZE / 2 + outlineWidthHalf)
                         .stroke({ width: outlineWidth, color: outlineColor });
                 }
                 if (isEdgeRight) {
-                    turtle.moveTo(dx * TILE_SIZE + TILE_SIZE / 2, dy * TILE_SIZE - TILE_SIZE / 2)
-                        .lineTo(dx * TILE_SIZE + TILE_SIZE / 2, dy * TILE_SIZE + TILE_SIZE / 2)
+                    turtle.moveTo(dx * TILE_SIZE + TILE_SIZE / 2, dy * TILE_SIZE - TILE_SIZE / 2 - outlineWidthHalf)
+                        .lineTo(dx * TILE_SIZE + TILE_SIZE / 2, dy * TILE_SIZE + TILE_SIZE / 2 + outlineWidthHalf)
                         .stroke({ width: outlineWidth, color: outlineColor });
                 }
                 if (isEdgeTop) {
-                    turtle.moveTo(dx * TILE_SIZE - TILE_SIZE / 2, dy * TILE_SIZE - TILE_SIZE / 2)
-                        .lineTo(dx * TILE_SIZE + TILE_SIZE / 2, dy * TILE_SIZE - TILE_SIZE / 2)
+                    turtle.moveTo(dx * TILE_SIZE - TILE_SIZE / 2 - outlineWidthHalf, dy * TILE_SIZE - TILE_SIZE / 2)
+                        .lineTo(dx * TILE_SIZE + TILE_SIZE / 2 + outlineWidthHalf, dy * TILE_SIZE - TILE_SIZE / 2)
                         .stroke({ width: outlineWidth, color: outlineColor });
                 }
                 if (isEdgeBottom) {
-                    turtle.moveTo(dx * TILE_SIZE - TILE_SIZE / 2, dy * TILE_SIZE + TILE_SIZE / 2)
-                        .lineTo(dx * TILE_SIZE + TILE_SIZE / 2, dy * TILE_SIZE + TILE_SIZE / 2)
+                    turtle.moveTo(dx * TILE_SIZE - TILE_SIZE / 2 - outlineWidthHalf, dy * TILE_SIZE + TILE_SIZE / 2)
+                        .lineTo(dx * TILE_SIZE + TILE_SIZE / 2 + outlineWidthHalf, dy * TILE_SIZE + TILE_SIZE / 2)
                         .stroke({ width: outlineWidth, color: outlineColor });
                 }
             }
