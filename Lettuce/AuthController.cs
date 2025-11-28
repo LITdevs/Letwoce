@@ -132,12 +132,15 @@ public class AuthController(ILogger<AuthController> logger, PgContext pg) : Cont
                 return Unauthorized("Only players may log in");
             }
 
+            var existingPawns = await pg.Pawns.Select(p => new System.Drawing.Point(p.X, p.Y)).ToListAsync();
+            var position = Util.PoissonDiskSampling.GeneratePoint(Program.GridWidth, Program.GridHeight, Program.MinPawnGenerationDistance, existingPawns);
+
             pawn = new Pawn
             {
                 DiscordId = identity.GetClaim(ClaimTypes.NameIdentifier)!,
                 DisplayName = identity.GetClaim(ClaimTypes.Name) ?? "Unknown",
-                X = Random.Shared.Next(0, Program.GridWidth),
-                Y = Random.Shared.Next(0, Program.GridHeight),
+                X = position.X,
+                Y = position.Y,
                 Health = 3,
                 Actions = 0,
                 Color = Color.FromArgb(255, Random.Shared.Next(0, 255), Random.Shared.Next(0, 255),

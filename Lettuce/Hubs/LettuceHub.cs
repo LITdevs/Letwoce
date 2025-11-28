@@ -381,12 +381,15 @@ public class LettuceHub : Hub
         if (pawn == null) return false;
         if (!pawn.IsAdmin) return false;
 
+        var existingPawns = await pg.Pawns.Select(p => new System.Drawing.Point(p.X, p.Y)).ToListAsync();
+        var position = Util.PoissonDiskSampling.GeneratePoint(Program.GridWidth, Program.GridHeight, Program.MinPawnGenerationDistance, existingPawns);
+
         pg.Add(new Pawn
         {
             DiscordId = discordId,
             DisplayName = initialName,
-            X = Random.Shared.Next(0, Program.GridWidth),
-            Y = Random.Shared.Next(0, Program.GridHeight),
+            X = position.X,
+            Y = position.Y,
             Health = 3,
             Actions = 0,
             Color = Color.FromArgb(255, Random.Shared.Next(0, 255), Random.Shared.Next(0, 255),
@@ -410,13 +413,17 @@ public class LettuceHub : Hub
         if (!pawn.IsAdmin) return false;
 
         var pawns = await pg.Pawns.ToArrayAsync();
-        
+        var regularPawns = pawns.Where(p => p.Id != Guid.AllBitsSet).ToArray();
+        var positions = Util.PoissonDiskSampling.GeneratePoints(Program.GridWidth, Program.GridHeight, regularPawns.Length, Program.MinPawnGenerationDistance);
+
+        int positionIndex = 0;
         foreach (var p in pawns)
         {
             if (p.Id != Guid.AllBitsSet)
             {
-                p.X = Random.Shared.Next(0, Program.GridWidth);
-                p.Y = Random.Shared.Next(0, Program.GridHeight);
+                var position = positions[positionIndex++];
+                p.X = position.X;
+                p.Y = position.Y;
                 p.Actions = 0;
                 p.Health = 3;
                 p.Vote = null;
@@ -424,7 +431,7 @@ public class LettuceHub : Hub
                 p.KilledById = null;
                 continue;
             }
-            
+
             p.X = -8;
             p.Y = (int)Math.Floor(Program.GridHeight / 2d);
             p.Actions = int.MaxValue;

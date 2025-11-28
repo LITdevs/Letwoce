@@ -14,6 +14,7 @@ public class Program
 {
     public static int GridWidth = 1;
     public static int GridHeight = 1;
+    public static float MinPawnGenerationDistance = 1;
     public static string BaseUrl = "";
     
     public static async Task Main(string[] args)
@@ -36,7 +37,9 @@ public class Program
         
         builder.Services.AddSignalR();
         GridWidth = builder.Configuration.GetValue<int>("Lettuce:GridWidth", 35); 
-        GridHeight = builder.Configuration.GetValue<int>("Lettuce:GridHeight", 25); 
+        GridHeight = builder.Configuration.GetValue<int>("Lettuce:GridHeight", 25);
+        MinPawnGenerationDistance = builder.Configuration.GetValue<float>("Lettuce:MinPawnGenerationDistance", 5f);
+
         builder.Services.AddDistributedPostgresCache(options =>
         {
             options.ConnectionString = builder.Configuration.GetConnectionString("Postgres");
