@@ -281,7 +281,7 @@
     
     async function forceMove(id) {
         let x = Number(document.getElementById(`pawn_${id}_x`).value);
-        let y = Number(document.getElementById(`pawn_${id}_x`).value);
+        let y = Number(document.getElementById(`pawn_${id}_y`).value);
         await connection.invoke("ForceMove", id, x, y);
         window.location.reload();
     }
